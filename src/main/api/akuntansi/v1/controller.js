@@ -94,7 +94,7 @@ class Controller {
                 {
                     _start: 0,
                     _end: 20,
-                    kode_akun: '',
+                    kode_akun: "",
                     tanggal_between: [moment().startOf("month").toISOString(), moment().endOf("month").toISOString()].join(","),
                 },
                 req.query
@@ -116,9 +116,13 @@ class Controller {
                 {
                     _start: 0,
                     _end: 20,
-                    kode_akun: '',
-                    id_pelanggan: '',
-                    tanggal_between: [moment().startOf("month").toISOString(), moment().endOf("month").toISOString()].join(","),
+                    kode_akun: "",
+                    id_pelanggan: "",
+                    tanggal_between: [
+                        //
+                        moment().startOf("month").toISOString(),
+                        moment().endOf("month").toISOString(),
+                    ].join(","),
                 },
                 req.query
             );
@@ -139,16 +143,17 @@ class Controller {
                 {
                     _start: 0,
                     _end: 20,
+                    tanggal1: moment().startOf("month").toISOString(),
+                    tanggal2: moment().endOf("month").toISOString(),
                 },
                 req.query
             );
             const result = await Model.getNeracaSaldo(options);
-            // res.set({
-            //     "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
-            //     "Access-Control-Expose-Headers": "X-Total-Count",
-            // });
-            // res.json(result.recordsets?.[1] || []);
-            res.json(result.recordset || []);
+            res.set({
+                "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
+                "Access-Control-Expose-Headers": "X-Total-Count",
+            });
+            res.json(result.recordsets?.[1] || []);
         } catch (error) {
             next(error);
         }
@@ -160,16 +165,17 @@ class Controller {
                 {
                     _start: 0,
                     _end: 20,
+                    tanggal1: moment().startOf("month").toISOString(),
+                    tanggal2: moment().endOf("month").toISOString(),
                 },
                 req.query
             );
             const result = await Model.getLabaRugi(options);
-            // res.set({
-            //     "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
-            //     "Access-Control-Expose-Headers": "X-Total-Count",
-            // });
-            // res.json(result.recordsets?.[1] || []);
-            res.json(result.recordset || []);
+            res.set({
+                "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
+                "Access-Control-Expose-Headers": "X-Total-Count",
+            });
+            res.json(result.recordsets?.[1] || []);
         } catch (error) {
             next(error);
         }
@@ -181,20 +187,22 @@ class Controller {
                 {
                     _start: 0,
                     _end: 20,
+                    tanggal1: moment().startOf("month").toISOString(),
+                    tanggal2: moment().endOf("month").toISOString(),
                 },
                 req.query
             );
             const result = await Model.getNeraca(options);
-            // res.set({
-            //     "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
-            //     "Access-Control-Expose-Headers": "X-Total-Count",
-            // });
-            // res.json(result.recordsets?.[1] || []);
-            res.json(result.recordset || []);
+            res.set({
+                "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
+                "Access-Control-Expose-Headers": "X-Total-Count",
+            });
+            res.json(result.recordsets?.[1] || []);
         } catch (error) {
             next(error);
         }
     }
+    
 }
 
 module.exports = Controller;

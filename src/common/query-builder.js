@@ -18,7 +18,9 @@ class QueryBuilder {
         _start = Number(_start);
         _end = Number(_end);
 
-        const {database,select,table,query2} = ({...query.match(new RegExp(/^(USE (?<database>.*)(\n| ))?[\s\S]+SELECT (?<select>.*) FROM (?<table>.*)(\n| )(?<query2>[\s\S]+)$/))?.groups})
+
+        const {database,select,table,query2} = ({...query.match(new RegExp(/^(^USE (?<database>.*)(\n| )[\s\S]+)?SELECT (?<select>.*) FROM (?<table>.*)(\n| )(?<query2>[\s\S]+)$/))?.groups})
+        console.log(database,select,table,query2)
 
         let keys = Object.keys(filters);
         if (keys.length) {

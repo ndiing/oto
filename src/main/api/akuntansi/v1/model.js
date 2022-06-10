@@ -3,16 +3,13 @@ const mssql = require("mssql/msnodesqlv8");
 const moment = require("moment");
 const Query = {};
 
-Query.init = [];
-Query.init[0] = `
+Query.init = [`
 USE master
 
 DROP DATABASE IF EXISTS akuntansi 
 
 CREATE DATABASE akuntansi
-`;
-
-Query.init[1] = `
+`,`
 USE akuntansi
 
 CREATE TABLE jurnal (
@@ -252,7 +249,7 @@ BEGIN
     VALUES
         ('id_mutasi', @id_mutasi)
 END
-`;
+`];
 Query.postJurnal = `
 USE akuntansi
 
@@ -367,7 +364,7 @@ AND id_mutasi < @kode2
 OR @kode2 IS NULL 
 ORDER BY id_mutasi
 `;
-Query.getNeracaSaldo=`
+Query.getNeracaSaldo = `
 USE akuntansi
 
 DECLARE @mutasi TABLE (
@@ -387,8 +384,8 @@ DECLARE @mutasi3 TABLE (
     kredit MONEY
 )
 DECLARE @saldo MONEY
-DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
-DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
+-- DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
+-- DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
 
 INSERT INTO @mutasi
 SELECT mutasi.kode_akun, mutasi.saldo_akun
@@ -410,15 +407,14 @@ SET @saldo = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi2)
 
 INSERT INTO @mutasi3
 SELECT kode, nama, debit, kredit FROM @mutasi2
-WHERE debit <> 0 OR kredit <> 0
 UNION ALL
 SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi2
 UNION ALL
 SELECT '', '', CASE WHEN @saldo > 0 THEN @saldo ELSE '' END, CASE WHEN @saldo < 0 THEN ABS(@saldo) ELSE '' END
 
-SELECT * FROM @mutasi3
-`
-Query.getLabaRugi=`
+--SELECT * FROM @mutasi3
+`;
+Query.getLabaRugi = `
 USE akuntansi
 
 DECLARE @mutasi TABLE (
@@ -439,8 +435,8 @@ DECLARE @mutasi3 TABLE (
     kredit MONEY
 )
 DECLARE @saldo MONEY
-DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
-DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
+--DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
+--DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
 
 INSERT INTO @mutasi
 SELECT mutasi.kode_akun, mutasi.saldo_akun
@@ -464,16 +460,14 @@ SET @saldo = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi2)
 
 INSERT INTO @mutasi3
 SELECT kode, nama, debit, kredit FROM @mutasi2
-WHERE debit <> 0 OR kredit <> 0
 UNION ALL
 SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi2
 UNION ALL
 SELECT '', '', CASE WHEN @saldo > 0 THEN @saldo ELSE '' END, CASE WHEN @saldo < 0 THEN ABS(@saldo) ELSE '' END
 
-SELECT * FROM @mutasi3
-`
-
-Query.getNeraca=`
+--SELECT * FROM @mutasi3
+`;
+Query.getNeraca = `
 USE akuntansi
 
 DECLARE @mutasi TABLE (
@@ -501,8 +495,8 @@ DECLARE @mutasi4 TABLE (
 )
 DECLARE @saldo MONEY
 DECLARE @saldo2 MONEY
-DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
-DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
+--DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
+--DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
 
 INSERT INTO @mutasi
 SELECT mutasi.kode_akun, mutasi.saldo_akun
@@ -540,14 +534,13 @@ SET @saldo2 = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi3)
 
 INSERT INTO @mutasi4
 SELECT kode, nama, debit, kredit FROM @mutasi3
-WHERE debit <> 0 OR kredit <> 0
 UNION ALL
 SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi3
 UNION ALL
 SELECT '', '', CASE WHEN @saldo2 > 0 THEN @saldo2 ELSE '' END, CASE WHEN @saldo2 < 0 THEN ABS(@saldo2) ELSE '' END
 
-SELECT * FROM @mutasi4
-`
+--SELECT * FROM @mutasi4
+`;
 
 class Model {
     static async getReseller(options = {}) {
@@ -896,52 +889,63 @@ class Model {
         } while (true);
     }
 
-
     static async getNeracaSaldo(options = {}) {
-        // const columns = {
-        //     _start: { type: mssql.Int },
-        //     _limit: { type: mssql.Int },
-        // };
-        // const _query = `USE akuntansi
-        // SELECT * FROM akun
-        // `;
-        // const [query, input] = QueryBuilder.parse(_query, options, columns);
+        const columns = {
+            _start: { type: mssql.Int },
+            _limit: { type: mssql.Int },
+        };
+        const {tanggal1,tanggal2,...options2} = options
+        const _query = `SELECT * FROM @mutasi3
+        `;
+        const [query, input] = QueryBuilder.parse(_query, options2, columns);
+        const input2 = [
+            ['tanggal1', mssql.DateTime, tanggal1],
+            ['tanggal2', mssql.DateTime, tanggal2],
+        ]
         const pool = await PoolManager.get();
         const request = pool.request();
-        // input.forEach(([column, type, value]) => request.input(column, type, value));
-        const result = await request.query(Query.getNeracaSaldo);
+        input.concat(input2).forEach(([column, type, value]) => request.input(column, type, value));
+        const result = await request.query(Query.getNeracaSaldo+query);
         return result;
     }
 
     static async getLabaRugi(options = {}) {
-        // const columns = {
-        //     _start: { type: mssql.Int },
-        //     _limit: { type: mssql.Int },
-        // };
-        // const _query = `USE akuntansi
-        // SELECT * FROM akun
-        // `;
-        // const [query, input] = QueryBuilder.parse(_query, options, columns);
+        const columns = {
+            _start: { type: mssql.Int },
+            _limit: { type: mssql.Int },
+        };
+        const {tanggal1,tanggal2,...options2} = options
+        const _query = `SELECT * FROM @mutasi3
+        `;
+        const [query, input] = QueryBuilder.parse(_query, options2, columns);
+        const input2 = [
+            ['tanggal1', mssql.DateTime, tanggal1],
+            ['tanggal2', mssql.DateTime, tanggal2],
+        ]
         const pool = await PoolManager.get();
         const request = pool.request();
-        // input.forEach(([column, type, value]) => request.input(column, type, value));
-        const result = await request.query(Query.getLabaRugi);
+        input.concat(input2).forEach(([column, type, value]) => request.input(column, type, value));
+        const result = await request.query(Query.getLabaRugi+query);
         return result;
     }
 
     static async getNeraca(options = {}) {
-        // const columns = {
-        //     _start: { type: mssql.Int },
-        //     _limit: { type: mssql.Int },
-        // };
-        // const _query = `USE akuntansi
-        // SELECT * FROM akun
-        // `;
-        // const [query, input] = QueryBuilder.parse(_query, options, columns);
+        const columns = {
+            _start: { type: mssql.Int },
+            _limit: { type: mssql.Int },
+        };
+        const {tanggal1,tanggal2,...options2} = options
+        const _query = `SELECT * FROM @mutasi4
+        `;
+        const [query, input] = QueryBuilder.parse(_query, options2, columns);
+        const input2 = [
+            ['tanggal1', mssql.DateTime, tanggal1],
+            ['tanggal2', mssql.DateTime, tanggal2],
+        ]
         const pool = await PoolManager.get();
         const request = pool.request();
-        // input.forEach(([column, type, value]) => request.input(column, type, value));
-        const result = await request.query(Query.getNeraca);
+        input.concat(input2).forEach(([column, type, value]) => request.input(column, type, value));
+        const result = await request.query(Query.getNeraca+query);
         return result;
     }
 

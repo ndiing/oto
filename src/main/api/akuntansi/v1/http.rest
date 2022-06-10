@@ -19,7 +19,7 @@ GET http://localhost/api/akuntansi/v1/i-banking
 GET http://localhost/api/akuntansi/v1/modul
 
 ### Data Akun
-GET http://localhost/api/akuntansi/v1/akun
+GET http://localhost/api/akuntansi/v1/akun?q=modal
 
 
 
@@ -37,13 +37,13 @@ Content-Type: application/json
     "rows": [
         {
             "kode_akun": "110000020",
-            "debit": 10000,
+            "debit": 2198938323,
             "kredit": 0
         },
         {
-            "kode_akun": "310000020",
+            "kode_akun": "320000099",
             "debit": 0,
-            "kredit": 100000
+            "kredit": 2198938323
         }
     ]
 }
@@ -56,6 +56,11 @@ GET http://localhost/api/akuntansi/v1/buku-besar
 GET http://localhost/api/akuntansi/v1/buku-besar-pembantu
 ?kode_akun=210000098
 &id_pelanggan=BC00395
+
+
+
+
+
 
 ### Data Neraca Saldo (Bulan Ini)
 GET http://localhost/api/akuntansi/v1/neraca-saldo
