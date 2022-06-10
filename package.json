@@ -1,0 +1,30 @@
+{
+  "name": "oto",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/main/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ndiing/oto.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ndiing/oto/issues"
+  },
+  "homepage": "https://github.com/ndiing/oto#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.1",
+    "helmet": "^5.1.0",
+    "moment": "^2.29.3",
+    "msnodesqlv8": "^2.4.8",
+    "mssql": "^8.1.2",
+    "node-fetch": "^2.6.7"
+  }
+}

@@ -1,0 +1,33 @@
+###
+GET http://localhost/api/akuntansi/v1/reseller
+
+###
+GET http://localhost/api/akuntansi/v1/i-banking
+
+###
+GET http://localhost/api/akuntansi/v1/modul
+
+###
+GET http://localhost/api/akuntansi/v1/akun
+
+###
+POST http://localhost/api/akuntansi/v1/jurnal-umum
+Content-Type: application/json
+
+{
+    "tanggal": "2022-06-10T07:51:12.513Z",
+    "bukti": "",
+    "keterangan": "keterangan",
+    "rows": [
+        {
+            "kode_akun": "110000020",
+            "debit": 10000,
+            "kredit": 0
+        },
+        {
+            "kode_akun": "310000020",
+            "debit": 0,
+            "kredit": 10000
+        }
+    ]
+}
