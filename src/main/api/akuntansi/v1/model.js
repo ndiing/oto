@@ -328,7 +328,12 @@ END
 Query.getMutasi = `
 USE otomax
 
-SELECT TOP (10)
+DROP TABLE IF EXISTS #mutasi
+
+DECLARE @kode INT = CAST(ISNULL((SELECT nilai FROM akuntansi.dbo.parameter WHERE nama = 'id_mutasi'), 0) AS INT)
+DECLARE @kode2 INT
+
+SELECT TOP (1000)
     mutasi.kode AS id_mutasi,
     mutasi.kode_reseller AS id_pelanggan,
     mutasi.tanggal AS tanggal,
@@ -336,6 +341,7 @@ SELECT TOP (10)
     mutasi.keterangan AS keterangan,
     mutasi.kode_reseller_2 AS id_pelanggan2,
     mutasi.jenis AS jenis,
+    mutasi.kode_transaksi AS kode_transaksi,
     transaksi.kode_produk AS kode_produk,
     transaksi.tujuan AS id_konsumen,
     transaksi.harga AS harga_jual,
@@ -343,10 +349,23 @@ SELECT TOP (10)
     transaksi.harga_beli AS harga_beli,
     transaksi.sn AS bukti,
     transaksi.komisi AS komisi,
-    i_banking.kode AS id_bank
+    i_banking.kode AS id_bank,
+    transaksi.status AS status,
+    transaksi.tgl_status AS tgl_status
+INTO #mutasi
 FROM mutasi
 LEFT OUTER JOIN transaksi ON transaksi.kode = mutasi.kode_transaksi
 LEFT OUTER JOIN i_banking ON mutasi.keterangan LIKE '%' + i_banking.label + '%'
+WHERE mutasi.kode > @kode
+ORDER BY mutasi.kode
+
+SET @kode2 = (SELECT TOP 1 id_mutasi FROM #mutasi WHERE status < 20 OR DATEADD(SECOND, 5, tgl_status) > GETDATE() ORDER BY id_mutasi)
+
+SELECT * FROM #mutasi 
+WHERE @kode2 IS NOT NULL 
+AND id_mutasi < @kode2 
+OR @kode2 IS NULL 
+ORDER BY id_mutasi
 `;
 
 class Model {
@@ -426,6 +445,44 @@ class Model {
         };
         const _query = `USE akuntansi
         SELECT * FROM akun
+        `;
+        const [query, input] = QueryBuilder.parse(_query, options, columns);
+        const pool = await PoolManager.get();
+        const request = pool.request();
+        input.forEach(([column, type, value]) => request.input(column, type, value));
+        const result = await request.query(query);
+        return result;
+    }
+
+    static async getBukuBesar(options = {}) {
+        const columns = {
+            _start: { type: mssql.Int },
+            _limit: { type: mssql.Int },
+            tanggal1: { type: mssql.DateTime },
+            tanggal2: { type: mssql.DateTime },
+        };
+        const _query = `USE akuntansi
+        SELECT mutasi.kode_akun, mutasi.debit, mutasi.kredit, mutasi.saldo_akun FROM mutasi
+        INNER JOIN jurnal ON jurnal.id = mutasi.id_jurnal
+        `;
+        const [query, input] = QueryBuilder.parse(_query, options, columns);
+        const pool = await PoolManager.get();
+        const request = pool.request();
+        input.forEach(([column, type, value]) => request.input(column, type, value));
+        const result = await request.query(query);
+        return result;
+    }
+
+    static async getBukuBesarPembantu(options = {}) {
+        const columns = {
+            _start: { type: mssql.Int },
+            _limit: { type: mssql.Int },
+            tanggal1: { type: mssql.DateTime },
+            tanggal2: { type: mssql.DateTime },
+        };
+        const _query = `USE akuntansi
+        SELECT mutasi.kode_akun, mutasi.debit, mutasi.kredit, mutasi.saldo_akun FROM mutasi
+        INNER JOIN jurnal ON jurnal.id = mutasi.id_jurnal
         `;
         const [query, input] = QueryBuilder.parse(_query, options, columns);
         const pool = await PoolManager.get();
@@ -630,30 +687,38 @@ class Model {
     }
 
     static async getMutasi() {
-        const pool = await PoolManager.get();
-        const request = pool.request();
-        const result = await request.query(Query.getMutasi);
-        for (const row of result.recordset) {
-            if (row.jenis == null || row.jenis == "B") {
-                if (row.jumlah > 0) {
-                    if (row.id_bank) await this.postJurnalTiketDeposit(row);
-                    else await this.postJurnalDeposit(row);
-                } else {
-                    if (row.id_bank) await this.postJurnalBatalTiketDeposit(row);
-                    else await this.postJurnalBatalDeposit(row);
-                }
-            } else if (row.jenis == "K") {
-                if (row.jumlah > 0) await this.postJurnalTukarKomisi(row);
-                else await this.postJurnalBatalKomisi(row);
-            } else if (row.jenis == "1") await this.postJurnalTransferKe(row);
-            else if (row.jenis == "2") await this.postJurnalTransferDari(row);
-            else if (row.jenis == "O") await this.postJurnalBiayaReply(row);
-            else if (row.jenis == "T") await this.postJurnalTransaksi(row);
-            else if (row.jenis == "G") await this.postJurnalRefund(row);
-        }
+        do {
+            const pool = await PoolManager.get();
+            const request = pool.request();
+            const result = await request.query(Query.getMutasi);
+            let length = result.recordset.length;
+            for (const row of result.recordset) {
+                if (row.jenis == null || row.jenis == "B") {
+                    if (row.jumlah > 0) {
+                        if (row.id_bank) await this.postJurnalTiketDeposit(row);
+                        else await this.postJurnalDeposit(row);
+                    } else {
+                        if (row.id_bank) await this.postJurnalBatalTiketDeposit(row);
+                        else await this.postJurnalBatalDeposit(row);
+                    }
+                } else if (row.jenis == "K") {
+                    if (row.jumlah > 0) await this.postJurnalTukarKomisi(row);
+                    else await this.postJurnalBatalKomisi(row);
+                } else if (row.jenis == "1") await this.postJurnalTransferKe(row);
+                else if (row.jenis == "2") await this.postJurnalTransferDari(row);
+                else if (row.jenis == "O") await this.postJurnalBiayaReply(row);
+                else if (row.jenis == "T") await this.postJurnalTransaksi(row);
+                else if (row.jenis == "G") await this.postJurnalRefund(row);
+                console.log(--length);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        } while (true);
     }
 }
 
 module.exports = Model;
 
-// Model.getMutasi().then(console.log);
+// console.log(
+//     moment().startOf('month').toISOString(),
+//     moment().endOf('month').toISOString(),
+// )

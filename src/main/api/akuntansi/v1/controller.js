@@ -77,6 +77,61 @@ class Controller {
             next(error);
         }
     }
+
+    static async getMutasi(req, res, next) {
+        try {
+            const options = Object.assign({}, req.query);
+            const result = Model.getMutasi(options);
+            res.json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async getBukuBesar(req, res, next) {
+        try {
+            const options = Object.assign(
+                {
+                    _start: 0,
+                    _end: 20,
+                    kode_akun: '',
+                    tanggal_between: [moment().startOf("month").toISOString(), moment().endOf("month").toISOString()].join(","),
+                },
+                req.query
+            );
+            const result = await Model.getBukuBesar(options);
+            res.set({
+                "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
+                "Access-Control-Expose-Headers": "X-Total-Count",
+            });
+            res.json(result.recordsets?.[1] || []);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async getBukuBesarPembantu(req, res, next) {
+        try {
+            const options = Object.assign(
+                {
+                    _start: 0,
+                    _end: 20,
+                    kode_akun: '',
+                    id_pelanggan: '',
+                    tanggal_between: [moment().startOf("month").toISOString(), moment().endOf("month").toISOString()].join(","),
+                },
+                req.query
+            );
+            const result = await Model.getBukuBesarPembantu(options);
+            res.set({
+                "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
+                "Access-Control-Expose-Headers": "X-Total-Count",
+            });
+            res.json(result.recordsets?.[1] || []);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = Controller;

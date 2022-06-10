@@ -1,19 +1,32 @@
-###
-GET http://localhost/api/akuntansi/v1/reseller
-
-###
-GET http://localhost/api/akuntansi/v1/i-banking
-
-###
-GET http://localhost/api/akuntansi/v1/modul
-
-###
+### Install
 POST http://localhost/api/akuntansi/v1/init
 
-###
+### Rekap
+POST http://localhost/api/akuntansi/v1/mutasi
+
+
+
+
+
+
+### Data Pelanggan
+GET http://localhost/api/akuntansi/v1/reseller
+
+### Data Bank
+GET http://localhost/api/akuntansi/v1/i-banking
+
+### Data Pemasok
+GET http://localhost/api/akuntansi/v1/modul
+
+### Data Akun
 GET http://localhost/api/akuntansi/v1/akun
 
-###
+
+
+
+
+
+### Buat Jurnal Umum
 POST http://localhost/api/akuntansi/v1/jurnal-umum
 Content-Type: application/json
 
@@ -30,7 +43,16 @@ Content-Type: application/json
         {
             "kode_akun": "310000020",
             "debit": 0,
-            "kredit": 10000
+            "kredit": 100000
         }
     ]
 }
+
+### Data Buku Besar (Bulan Ini)
+GET http://localhost/api/akuntansi/v1/buku-besar
+?kode_akun=320000099
+
+### Data Buku Besar Pembantu (Bulan Ini)
+GET http://localhost/api/akuntansi/v1/buku-besar-pembantu
+?kode_akun=210000098
+&id_pelanggan=BC00002

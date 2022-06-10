@@ -18,13 +18,7 @@ class QueryBuilder {
         _start = Number(_start);
         _end = Number(_end);
 
-        let matcher = "";
-        matcher += `^`;
-        matcher += `(?=(?:USE (?<database>.*)\\n)?)`;
-        matcher += `(?=(?:[\\s\\S]+SELECT (?<select>.*) FROM (?<table>.*)\\n)?)`;
-        matcher += `[\\s\\S]+$`;
-
-        const { database, select, table } = { ...query.match(new RegExp(matcher))?.groups };
+        const {database,select,table,query2} = ({...query.match(new RegExp(/^(USE (?<database>.*)(\n| ))?[\s\S]+SELECT (?<select>.*) FROM (?<table>.*)(\n| )(?<query2>[\s\S]+)$/))?.groups})
 
         let keys = Object.keys(filters);
         if (keys.length) {
@@ -46,8 +40,8 @@ class QueryBuilder {
                         _between: (column, value) => {
                             const [value1, value2] = value.split(",");
                             input.delete(column);
-                            input.set(`@${column}1`, value1);
-                            input.set(`@${column}2`, value2);
+                            input.set(`${column}1`, value1);
+                            input.set(`${column}2`, value2);
                             return `${column} BETWEEN @${column}1 AND @${column}2\n`;
                         },
                     }[operator](column, value);
@@ -85,9 +79,11 @@ class QueryBuilder {
         }
 
         query += `SELECT COUNT(*) FROM ${table}\n`;
+        query += query2;
         query += where;
 
         query += `SELECT ${select} FROM ${table}\n`;
+        query += query2;
         query += where;
 
         if (_sort || (!isNaN(_start) && !isNaN(_end))) {
