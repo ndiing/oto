@@ -44,6 +44,16 @@ class Controller {
         }
     }
 
+    static async init(req, res, next) {
+        try {
+            const options = Object.assign({}, req.body);
+            const result = await Model.init(options);
+            res.json(result.rowsAffected || []);
+        } catch (error) {
+            next(error);
+        }
+    }
+
     static async getAkun(req, res, next) {
         try {
             const options = Object.assign({ _start: 0, _end: 20 }, req.query);

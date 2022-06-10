@@ -8,6 +8,9 @@ GET http://localhost/api/akuntansi/v1/i-banking
 GET http://localhost/api/akuntansi/v1/modul
 
 ###
+POST http://localhost/api/akuntansi/v1/init
+
+###
 GET http://localhost/api/akuntansi/v1/akun
 
 ###

@@ -3,7 +3,8 @@ const mssql = require("mssql/msnodesqlv8");
 const moment = require("moment");
 const Query = {};
 
-Query.init = `
+Query.init = [];
+Query.init[0] = `
 USE master
 
 DROP DATABASE IF EXISTS akuntansi 
@@ -11,7 +12,7 @@ DROP DATABASE IF EXISTS akuntansi
 CREATE DATABASE akuntansi
 `;
 
-Query.init2 = `
+Query.init[1] = `
 USE akuntansi
 
 CREATE TABLE jurnal (
@@ -44,10 +45,10 @@ CREATE TABLE mutasi (
     harga_beli MONEY NULL,
     harga_jual MONEY NULL,
     kode_akun VARCHAR(MAX) NOT NULL,
-    debit MONEY NOT NULL,
-    kredit MONEY NOT NULL,
+    debit MONEY NULL,
+    kredit MONEY NULL,
     saldo MONEY NULL,
-    saldo_akun MONEY NOT NULL
+    saldo_akun MONEY NULL
 )
 
 CREATE TABLE parameter (
@@ -103,8 +104,8 @@ VALUES
 ('140000020', 'Persediaan 2', '1400','rill',NULL),
 ('140000030', 'Persediaan 3', '1400','rill',NULL),
 ('140000040', 'Persediaan 4', '1400','rill',NULL),
-('150000010', 'Pajak Dibayar di Muka', '1500','rill',NULL),
-('150000020', 'Asuransi Dibayar di Muka', '1500','rill',NULL),
+('1options.jumlah0010', 'Pajak Dibayar di Muka', '1500','rill',NULL),
+('1options.jumlah0020', 'Asuransi Dibayar di Muka', '1500','rill',NULL),
 ('160000010', 'Investasi Saham', '1600','rill',NULL),
 ('160000020', 'Investasi Obligasi', '1600','rill',NULL),
 ('170000010', 'Tanah', '1700','rill',NULL),
@@ -183,6 +184,74 @@ VALUES
 ('210000099', 'Uang Muka Penjualan (USD)', '2100','rill',NULL),
 ('140000098', 'Persediaan Dalam Perjalanan Beli', '1400','rill',NULL),
 ('140000099', 'Persediaan Dalam Perjalanan Jual', '1400','rill',NULL)
+
+USE otomax
+
+DECLARE @komisi TABLE(
+    kode VARCHAR(20),
+    saldo MONEY
+)
+DECLARE @saldo MONEY
+DECLARE @jurnal TABLE(
+    id INT
+)
+DECLARE @id_jurnal INT
+
+-- id_jurnal?
+INSERT INTO akuntansi.dbo.jurnal
+    (tanggal,keterangan)
+OUTPUT inserted.id INTO @jurnal
+VALUES
+    (GETDATE(), 'Saldo Awal')
+
+INSERT INTO @komisi
+SELECT kode_reseller, SUM(jumlah)
+FROM komisi
+WHERE tukar = 0
+GROUP BY kode_reseller
+
+SET @id_jurnal = (SELECT id
+FROM @jurnal)
+SET @saldo = (SELECT SUM(saldo)
+FROM reseller) + (SELECT SUM(saldo)
+FROM @komisi)
+
+-- "kode": "320000099",
+-- "nama": "Historical Balancing",
+INSERT INTO akuntansi.dbo.mutasi
+    (id_jurnal,kode_akun,saldo_akun)
+SELECT @id_jurnal, '320000099', @saldo
+
+-- "kode": "210000098",
+-- "nama": "Uang Muka Penjualan",
+INSERT INTO akuntansi.dbo.mutasi
+    (id_jurnal,kode_akun,id_pelanggan,saldo,saldo_akun)
+SELECT @id_jurnal, '210000098', kode, 0 - saldo, SUM(0 - saldo) OVER(ORDER BY kode)
+FROM reseller
+
+-- "kode": "210000082",
+-- "nama": "Hutang Komisi Penjualan",
+INSERT INTO akuntansi.dbo.mutasi
+    (id_jurnal,kode_akun,id_pelanggan,saldo,saldo_akun)
+SELECT @id_jurnal, '210000082', kode, 0 - saldo, SUM(0 - saldo) OVER(ORDER BY kode)
+FROM @komisi
+
+DECLARE @id_mutasi INT = ISNULL((SELECT TOP 1
+    kode
+FROM mutasi
+ORDER BY kode DESC), 0)
+
+UPDATE akuntansi.dbo.parameter
+SET nilai = @id_mutasi
+WHERE nama = 'id_mutasi'
+
+IF @@ROWCOUNT = 0
+BEGIN
+    INSERT INTO akuntansi.dbo.parameter
+        (nama,nilai)
+    VALUES
+        ('id_mutasi', @id_mutasi)
+END
 `;
 Query.postJurnal = `
 USE akuntansi
@@ -256,6 +325,29 @@ BEGIN
     UPDATE parameter SET nilai = @id_mutasi WHERE nama = 'id_mutasi'
 END
 `;
+Query.getMutasi = `
+USE otomax
+
+SELECT TOP (10)
+    mutasi.kode AS id_mutasi,
+    mutasi.kode_reseller AS id_pelanggan,
+    mutasi.tanggal AS tanggal,
+    mutasi.jumlah AS jumlah,
+    mutasi.keterangan AS keterangan,
+    mutasi.kode_reseller_2 AS id_pelanggan2,
+    mutasi.jenis AS jenis,
+    transaksi.kode_produk AS kode_produk,
+    transaksi.tujuan AS id_konsumen,
+    transaksi.harga AS harga_jual,
+    transaksi.kode_modul AS id_pemasok,
+    transaksi.harga_beli AS harga_beli,
+    transaksi.sn AS bukti,
+    transaksi.komisi AS komisi,
+    i_banking.kode AS id_bank
+FROM mutasi
+LEFT OUTER JOIN transaksi ON transaksi.kode = mutasi.kode_transaksi
+LEFT OUTER JOIN i_banking ON mutasi.keterangan LIKE '%' + i_banking.label + '%'
+`;
 
 class Model {
     static async getReseller(options = {}) {
@@ -311,6 +403,15 @@ class Model {
         const request = pool.request();
         input.forEach(([column, type, value]) => request.input(column, type, value));
         const result = await request.query(query);
+        return result;
+    }
+
+    static async init(options = {}) {
+        const pool = await PoolManager.get();
+        let result;
+        for (const query of Query.init) {
+            result = await pool.request().query(query);
+        }
         return result;
     }
 
@@ -376,24 +477,183 @@ class Model {
             throw { code: 400, message: "Saldo tidak seimbang." };
         }
         const result = await Model.postJurnal(jurnal);
+        // console.log(jurnal);
         id_jurnal = result.recordsets?.[0]?.[0]?.["id"];
         for (const row of rows) {
             const mutasi = Object.assign(jurnal, row, { id_jurnal });
             await Model.postMutasi(mutasi);
+            // console.log(mutasi);
         }
         return result;
+    }
+
+    static async postJurnalDeposit(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "110000020", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "210000098", debit: 0, kredit: options.jumlah },
+                ],
+            })
+        );
+    }
+    static async postJurnalTiketDeposit(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "120000010", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "210000098", debit: 0, kredit: options.jumlah },
+                ],
+            })
+        );
+    }
+    static async postJurnalBatalDeposit(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "110000020", debit: 0, kredit: options.jumlah },
+                ],
+            })
+        );
+    }
+    static async postJurnalBatalTiketDeposit(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "120000010", debit: 0, kredit: options.jumlah },
+                ],
+            })
+        );
+    }
+    static async postJurnalTukarKomisi(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "210000082", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "210000098", debit: 0, kredit: options.jumlah },
+                ],
+            })
+        );
+    }
+    static async postJurnalBatalKomisi(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "210000082", debit: 0, kredit: options.jumlah },
+                ],
+            })
+        );
+    }
+    static async postJurnalTransferKe(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "320000099", debit: 0, kredit: options.jumlah },
+                ],
+            })
+        );
+    }
+    static async postJurnalTransferDari(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "320000099", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "210000098", debit: 0, kredit: options.jumlah },
+                ],
+            })
+        );
+    }
+    static async postJurnalBiayaReply(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "420000040", debit: 0, kredit: options.jumlah },
+                ],
+            })
+        );
+    }
+    static async postJurnalTransaksi(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "410000010", debit: 0, kredit: options.jumlah },
+                    ...((options.harga_beli && [
+                        { kode_akun: "510000010", debit: options.harga_beli, kredit: 0 },
+                        { kode_akun: "130000098", debit: 0, kredit: options.harga_beli },
+                    ]) ||
+                        []),
+                    ...((options.komisi && [
+                        { kode_akun: "510000040", debit: options.komisi, kredit: 0 },
+                        { kode_akun: "210000082", debit: 0, kredit: options.komisi },
+                    ]) ||
+                        []),
+                ],
+            })
+        );
+    }
+    static async postJurnalRefund(options = {}) {
+        options.jumlah = Math.abs(options.jumlah);
+        return this.postJurnalUmum(
+            Object.assign(options, {
+                rows: [
+                    { kode_akun: "410000010", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "210000098", debit: 0, kredit: options.jumlah },
+                    ...((options.harga_beli && [
+                        { kode_akun: "130000098", debit: options.harga_beli, kredit: 0 },
+                        { kode_akun: "510000010", debit: 0, kredit: options.harga_beli },
+                    ]) ||
+                        []),
+                    ...((options.komisi && [
+                        { kode_akun: "210000082", debit: options.komisi, kredit: 0 },
+                        { kode_akun: "510000040", debit: 0, kredit: options.komisi },
+                    ]) ||
+                        []),
+                ],
+            })
+        );
+    }
+
+    static async getMutasi() {
+        const pool = await PoolManager.get();
+        const request = pool.request();
+        const result = await request.query(Query.getMutasi);
+        for (const row of result.recordset) {
+            if (row.jenis == null || row.jenis == "B") {
+                if (row.jumlah > 0) {
+                    if (row.id_bank) await this.postJurnalTiketDeposit(row);
+                    else await this.postJurnalDeposit(row);
+                } else {
+                    if (row.id_bank) await this.postJurnalBatalTiketDeposit(row);
+                    else await this.postJurnalBatalDeposit(row);
+                }
+            } else if (row.jenis == "K") {
+                if (row.jumlah > 0) await this.postJurnalTukarKomisi(row);
+                else await this.postJurnalBatalKomisi(row);
+            } else if (row.jenis == "1") await this.postJurnalTransferKe(row);
+            else if (row.jenis == "2") await this.postJurnalTransferDari(row);
+            else if (row.jenis == "O") await this.postJurnalBiayaReply(row);
+            else if (row.jenis == "T") await this.postJurnalTransaksi(row);
+            else if (row.jenis == "G") await this.postJurnalRefund(row);
+        }
     }
 }
 
 module.exports = Model;
 
-// Model.postJurnalUmum().then(console.log);
-// console.log(JSON.stringify({
-//     tanggal: moment(),
-//     bukti: "",
-//     keterangan: "keterangan",
-//     rows: [
-//         { kode_akun: "110000020", debit: 10000, kredit: 0 },
-//         { kode_akun: "310000020", debit: 0, kredit: 10000 },
-//     ],
-// }, null, 4))
+// Model.getMutasi().then(console.log);
