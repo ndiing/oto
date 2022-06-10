@@ -132,6 +132,69 @@ class Controller {
             next(error);
         }
     }
+
+    static async getNeracaSaldo(req, res, next) {
+        try {
+            const options = Object.assign(
+                {
+                    _start: 0,
+                    _end: 20,
+                },
+                req.query
+            );
+            const result = await Model.getNeracaSaldo(options);
+            // res.set({
+            //     "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
+            //     "Access-Control-Expose-Headers": "X-Total-Count",
+            // });
+            // res.json(result.recordsets?.[1] || []);
+            res.json(result.recordset || []);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async getLabaRugi(req, res, next) {
+        try {
+            const options = Object.assign(
+                {
+                    _start: 0,
+                    _end: 20,
+                },
+                req.query
+            );
+            const result = await Model.getLabaRugi(options);
+            // res.set({
+            //     "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
+            //     "Access-Control-Expose-Headers": "X-Total-Count",
+            // });
+            // res.json(result.recordsets?.[1] || []);
+            res.json(result.recordset || []);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async getNeraca(req, res, next) {
+        try {
+            const options = Object.assign(
+                {
+                    _start: 0,
+                    _end: 20,
+                },
+                req.query
+            );
+            const result = await Model.getNeraca(options);
+            // res.set({
+            //     "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
+            //     "Access-Control-Expose-Headers": "X-Total-Count",
+            // });
+            // res.json(result.recordsets?.[1] || []);
+            res.json(result.recordset || []);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = Controller;

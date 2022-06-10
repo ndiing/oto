@@ -12,5 +12,8 @@ router.get("/akun", Controller.getAkun);
 router.post("/jurnal-umum", Controller.postJurnalUmum);
 router.get("/buku-besar", Controller.getBukuBesar);
 router.get("/buku-besar-pembantu", Controller.getBukuBesarPembantu);
+router.get("/neraca-saldo", Controller.getNeracaSaldo);
+router.get("/laba-rugi", Controller.getLabaRugi);
+router.get("/neraca", Controller.getNeraca);
 
 module.exports = router;

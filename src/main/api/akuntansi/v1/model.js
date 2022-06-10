@@ -25,7 +25,7 @@ CREATE TABLE jurnal (
 
 CREATE TABLE akun (
     kode VARCHAR(20) NOT NULL PRIMARY KEY,
-    nama VARCHAR(MAX) NOT NULL,
+    nama VARCHAR(50) NOT NULL,
     kelompok VARCHAR(20) NULL,
     kelompok2 VARCHAR(20) NULL,
     saldo MONEY NULL
@@ -35,16 +35,16 @@ CREATE TABLE mutasi (
     id INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
     id_jurnal INT NOT NULL,
     id_mutasi INT NULL,
-    id_karyawan VARCHAR(MAX) NULL,
-    id_pemasok VARCHAR(MAX) NULL,
-    id_pelanggan VARCHAR(MAX) NULL,
-    id_konsumen VARCHAR(MAX) NULL,
-    id_bank VARCHAR(MAX) NULL,
-    kode_produk VARCHAR(MAX) NULL,
-    kode_bahan VARCHAR(MAX) NULL,
+    id_karyawan VARCHAR(50) NULL,
+    id_pemasok VARCHAR(50) NULL,
+    id_pelanggan VARCHAR(50) NULL,
+    id_konsumen VARCHAR(50) NULL,
+    id_bank VARCHAR(50) NULL,
+    kode_produk VARCHAR(50) NULL,
+    kode_bahan VARCHAR(50) NULL,
     harga_beli MONEY NULL,
     harga_jual MONEY NULL,
-    kode_akun VARCHAR(MAX) NOT NULL,
+    kode_akun VARCHAR(50) NOT NULL,
     debit MONEY NULL,
     kredit MONEY NULL,
     saldo MONEY NULL,
@@ -367,6 +367,187 @@ AND id_mutasi < @kode2
 OR @kode2 IS NULL 
 ORDER BY id_mutasi
 `;
+Query.getNeracaSaldo=`
+USE akuntansi
+
+DECLARE @mutasi TABLE (
+    kode_akun VARCHAR(20),
+    saldo_akun MONEY
+)
+DECLARE @mutasi2 TABLE (
+    kode VARCHAR(20),
+    nama VARCHAR(MAX),
+    debit MONEY,
+    kredit MONEY
+)
+DECLARE @mutasi3 TABLE (
+    kode VARCHAR(20),
+    nama VARCHAR(MAX),
+    debit MONEY,
+    kredit MONEY
+)
+DECLARE @saldo MONEY
+DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
+DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
+
+INSERT INTO @mutasi
+SELECT mutasi.kode_akun, mutasi.saldo_akun
+FROM mutasi
+JOIN jurnal ON jurnal.id = mutasi.id_jurnal
+WHERE mutasi.id IN (SELECT MAX(mutasi.id) FROM mutasi GROUP BY mutasi.kode_akun)
+AND jurnal.tanggal BETWEEN @tanggal1 AND @tanggal2
+
+INSERT INTO @mutasi2
+SELECT 
+    akun.kode,
+    akun.nama,
+    CASE WHEN m.saldo_akun > 0 THEN m.saldo_akun ELSE 0 END AS debit,
+    CASE WHEN m.saldo_akun < 0 THEN ABS(m.saldo_akun) ELSE 0 END AS kredit
+FROM @mutasi m
+FULL JOIN akun ON akun.kode = m.kode_akun
+
+SET @saldo = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi2)
+
+INSERT INTO @mutasi3
+SELECT kode, nama, debit, kredit FROM @mutasi2
+WHERE debit <> 0 OR kredit <> 0
+UNION ALL
+SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi2
+UNION ALL
+SELECT '', '', CASE WHEN @saldo > 0 THEN @saldo ELSE '' END, CASE WHEN @saldo < 0 THEN ABS(@saldo) ELSE '' END
+
+SELECT * FROM @mutasi3
+`
+Query.getLabaRugi=`
+USE akuntansi
+
+DECLARE @mutasi TABLE (
+    kode_akun VARCHAR(20),
+    saldo_akun MONEY
+)
+DECLARE @mutasi2 TABLE (
+    kode VARCHAR(20),
+    nama VARCHAR(MAX),
+    kelompok2 VARCHAR(20),
+    debit MONEY,
+    kredit MONEY
+)
+DECLARE @mutasi3 TABLE (
+    kode VARCHAR(20),
+    nama VARCHAR(MAX),
+    debit MONEY,
+    kredit MONEY
+)
+DECLARE @saldo MONEY
+DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
+DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
+
+INSERT INTO @mutasi
+SELECT mutasi.kode_akun, mutasi.saldo_akun
+FROM mutasi
+JOIN jurnal ON jurnal.id = mutasi.id_jurnal
+WHERE mutasi.id IN (SELECT MAX(mutasi.id) FROM mutasi GROUP BY mutasi.kode_akun)
+AND jurnal.tanggal BETWEEN @tanggal1 AND @tanggal2
+
+INSERT INTO @mutasi2
+SELECT 
+    akun.kode,
+    akun.nama,
+    akun.kelompok2,
+    CASE WHEN m.saldo_akun > 0 THEN m.saldo_akun ELSE 0 END AS debit,
+    CASE WHEN m.saldo_akun < 0 THEN ABS(m.saldo_akun) ELSE 0 END AS kredit
+FROM @mutasi m
+FULL JOIN akun ON akun.kode = m.kode_akun
+WHERE akun.kelompok2 = 'nominal'
+
+SET @saldo = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi2)
+
+INSERT INTO @mutasi3
+SELECT kode, nama, debit, kredit FROM @mutasi2
+WHERE debit <> 0 OR kredit <> 0
+UNION ALL
+SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi2
+UNION ALL
+SELECT '', '', CASE WHEN @saldo > 0 THEN @saldo ELSE '' END, CASE WHEN @saldo < 0 THEN ABS(@saldo) ELSE '' END
+
+SELECT * FROM @mutasi3
+`
+
+Query.getNeraca=`
+USE akuntansi
+
+DECLARE @mutasi TABLE (
+    kode_akun VARCHAR(20),
+    saldo_akun MONEY
+)
+DECLARE @mutasi2 TABLE (
+    kode VARCHAR(20),
+    nama VARCHAR(MAX),
+    kelompok2 VARCHAR(20),
+    debit MONEY,
+    kredit MONEY
+)
+DECLARE @mutasi3 TABLE (
+    kode VARCHAR(20),
+    nama VARCHAR(MAX),
+    debit MONEY,
+    kredit MONEY
+)
+DECLARE @mutasi4 TABLE (
+    kode VARCHAR(20),
+    nama VARCHAR(MAX),
+    debit MONEY,
+    kredit MONEY
+)
+DECLARE @saldo MONEY
+DECLARE @saldo2 MONEY
+DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
+DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
+
+INSERT INTO @mutasi
+SELECT mutasi.kode_akun, mutasi.saldo_akun
+FROM mutasi
+JOIN jurnal ON jurnal.id = mutasi.id_jurnal
+WHERE mutasi.id IN (SELECT MAX(mutasi.id) FROM mutasi GROUP BY mutasi.kode_akun)
+AND jurnal.tanggal BETWEEN @tanggal1 AND @tanggal2
+
+INSERT INTO @mutasi2
+SELECT 
+    akun.kode,
+    akun.nama,
+    akun.kelompok2,
+    CASE WHEN m.saldo_akun > 0 THEN m.saldo_akun ELSE 0 END AS debit,
+    CASE WHEN m.saldo_akun < 0 THEN ABS(m.saldo_akun) ELSE 0 END AS kredit
+FROM @mutasi m
+FULL JOIN akun ON akun.kode = m.kode_akun
+
+SET @saldo = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi2
+WHERE kelompok2 = 'nominal')
+
+-- "kode": "320000020",
+-- "nama": "Laba Tahun Berjalan",
+UPDATE @mutasi2
+SET 
+debit = CASE WHEN @saldo > 0 THEN @saldo ELSE 0 END,
+kredit = CASE WHEN @saldo < 0 THEN ABS(@saldo) ELSE 0 END
+WHERE kode = '320000020'
+
+INSERT INTO @mutasi3
+SELECT kode, nama, debit, kredit FROM @mutasi2
+WHERE kelompok2 = 'rill'
+
+SET @saldo2 = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi3)
+
+INSERT INTO @mutasi4
+SELECT kode, nama, debit, kredit FROM @mutasi3
+WHERE debit <> 0 OR kredit <> 0
+UNION ALL
+SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi3
+UNION ALL
+SELECT '', '', CASE WHEN @saldo2 > 0 THEN @saldo2 ELSE '' END, CASE WHEN @saldo2 < 0 THEN ABS(@saldo2) ELSE '' END
+
+SELECT * FROM @mutasi4
+`
 
 class Model {
     static async getReseller(options = {}) {
@@ -714,6 +895,56 @@ class Model {
             await new Promise((resolve) => setTimeout(resolve, 1000));
         } while (true);
     }
+
+
+    static async getNeracaSaldo(options = {}) {
+        // const columns = {
+        //     _start: { type: mssql.Int },
+        //     _limit: { type: mssql.Int },
+        // };
+        // const _query = `USE akuntansi
+        // SELECT * FROM akun
+        // `;
+        // const [query, input] = QueryBuilder.parse(_query, options, columns);
+        const pool = await PoolManager.get();
+        const request = pool.request();
+        // input.forEach(([column, type, value]) => request.input(column, type, value));
+        const result = await request.query(Query.getNeracaSaldo);
+        return result;
+    }
+
+    static async getLabaRugi(options = {}) {
+        // const columns = {
+        //     _start: { type: mssql.Int },
+        //     _limit: { type: mssql.Int },
+        // };
+        // const _query = `USE akuntansi
+        // SELECT * FROM akun
+        // `;
+        // const [query, input] = QueryBuilder.parse(_query, options, columns);
+        const pool = await PoolManager.get();
+        const request = pool.request();
+        // input.forEach(([column, type, value]) => request.input(column, type, value));
+        const result = await request.query(Query.getLabaRugi);
+        return result;
+    }
+
+    static async getNeraca(options = {}) {
+        // const columns = {
+        //     _start: { type: mssql.Int },
+        //     _limit: { type: mssql.Int },
+        // };
+        // const _query = `USE akuntansi
+        // SELECT * FROM akun
+        // `;
+        // const [query, input] = QueryBuilder.parse(_query, options, columns);
+        const pool = await PoolManager.get();
+        const request = pool.request();
+        // input.forEach(([column, type, value]) => request.input(column, type, value));
+        const result = await request.query(Query.getNeraca);
+        return result;
+    }
+
 }
 
 module.exports = Model;
