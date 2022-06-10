@@ -462,7 +462,7 @@ class Model {
             tanggal2: { type: mssql.DateTime },
         };
         const _query = `USE akuntansi
-        SELECT mutasi.kode_akun, mutasi.debit, mutasi.kredit, mutasi.saldo_akun FROM mutasi
+        SELECT jurnal.tanggal, jurnal.keterangan, mutasi.kode_akun, mutasi.debit, mutasi.kredit, mutasi.saldo_akun FROM mutasi
         INNER JOIN jurnal ON jurnal.id = mutasi.id_jurnal
         `;
         const [query, input] = QueryBuilder.parse(_query, options, columns);
@@ -481,7 +481,7 @@ class Model {
             tanggal2: { type: mssql.DateTime },
         };
         const _query = `USE akuntansi
-        SELECT mutasi.kode_akun, mutasi.debit, mutasi.kredit, mutasi.saldo_akun FROM mutasi
+        SELECT jurnal.tanggal, jurnal.keterangan, mutasi.kode_akun, mutasi.debit, mutasi.kredit, mutasi.saldo FROM mutasi
         INNER JOIN jurnal ON jurnal.id = mutasi.id_jurnal
         `;
         const [query, input] = QueryBuilder.parse(_query, options, columns);
@@ -719,6 +719,6 @@ class Model {
 module.exports = Model;
 
 // console.log(
-//     moment().startOf('month').toISOString(),
-//     moment().endOf('month').toISOString(),
+//     moment('2022-03').startOf('month').toISOString(),
+//     moment('2022-03').endOf('month').toISOString(),
 // )

@@ -24,7 +24,12 @@ app.use((req, res, next) => {
 });
 app.use((err, req, res, next) => {
     err = JSON.parse(JSON.stringify(err, Object.getOwnPropertyNames(err)));
-    res.json(err);
+    console.error(err);
+    err.code = (err?.originalError?.code && 400) || (http.STATUS_CODES[err.code] && err.code) || 500;
+    res.status(err.code).json({
+        // code: http.STATUS_CODES[err.code].replace(/[^\w]/g, "_").toUpperCase(),
+        message: err.message,
+    });
 });
 
 http.createServer(app).listen(80);

@@ -10,7 +10,7 @@ POST http://localhost/api/akuntansi/v1/mutasi
 
 
 ### Data Pelanggan
-GET http://localhost/api/akuntansi/v1/reseller
+GET http://localhost/api/akuntansi/v1/reseller?q=virgin
 
 ### Data Bank
 GET http://localhost/api/akuntansi/v1/i-banking
@@ -55,4 +55,4 @@ GET http://localhost/api/akuntansi/v1/buku-besar
 ### Data Buku Besar Pembantu (Bulan Ini)
 GET http://localhost/api/akuntansi/v1/buku-besar-pembantu
 ?kode_akun=210000098
-&id_pelanggan=BC00002
+&id_pelanggan=BC00395
