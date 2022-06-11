@@ -1,5 +1,6 @@
 const http = require("http");
 const https = require("https");
+const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -8,7 +9,10 @@ process.on("uncaughtException", console.error);
 process.on("uncaughtExceptionMonitor", console.error);
 process.on("unhandledRejection", console.error);
 
-const options = {};
+const options = {
+    key: fs.readFileSync("key.pem"),
+    cert: fs.readFileSync("cert.pem"),
+};
 const app = express();
 
 app.use(express.json());
@@ -19,7 +23,7 @@ app.use((req, res, next) => {
     next();
 });
 app.use("/api/akuntansi/v1/", require("./api/akuntansi/v1/index"));
-app.use(express.static('./static'))
+app.use(express.static("./static"));
 app.use((req, res, next) => {
     next({ code: 404 });
 });
@@ -34,4 +38,4 @@ app.use((err, req, res, next) => {
 });
 
 http.createServer(app).listen(80);
-http.createServer(options, app).listen(443);
+https.createServer(options, app).listen(443);
