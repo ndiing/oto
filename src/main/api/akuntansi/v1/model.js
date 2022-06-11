@@ -325,11 +325,30 @@ END
 Query.getMutasi = `
 USE otomax
 
-DROP TABLE IF EXISTS #mutasi
-
+DECLARE @mutasi TABLE(
+    id_mutasi INT,
+    id_pelanggan VARCHAR(50),
+    tanggal DATETIME,
+    jumlah MONEY,
+    keterangan VARCHAR(MAX),
+    id_pelanggan2 VARCHAR(50),
+    jenis VARCHAR(50),
+    kode_transaksi VARCHAR(50),
+    kode_produk VARCHAR(50),
+    id_konsumen VARCHAR(50),
+    harga_jual MONEY,
+    id_pemasok INT,
+    harga_beli MONEY,
+    bukti VARCHAR(MAX),
+    komisi MONEY,
+    id_bank INT,
+    status INT,
+    tgl_status DATETIME
+)
 DECLARE @kode INT = CAST(ISNULL((SELECT nilai FROM akuntansi.dbo.parameter WHERE nama = 'id_mutasi'), 0) AS INT)
 DECLARE @kode2 INT
 
+INSERT INTO @mutasi
 SELECT TOP (1000)
     mutasi.kode AS id_mutasi,
     mutasi.kode_reseller AS id_pelanggan,
@@ -349,16 +368,15 @@ SELECT TOP (1000)
     i_banking.kode AS id_bank,
     transaksi.status AS status,
     transaksi.tgl_status AS tgl_status
-INTO #mutasi
 FROM mutasi
 LEFT OUTER JOIN transaksi ON transaksi.kode = mutasi.kode_transaksi
 LEFT OUTER JOIN i_banking ON mutasi.keterangan LIKE '%' + i_banking.label + '%'
 WHERE mutasi.kode > @kode
 ORDER BY mutasi.kode
 
-SET @kode2 = (SELECT TOP 1 id_mutasi FROM #mutasi WHERE status < 20 OR DATEADD(SECOND, 5, tgl_status) > GETDATE() ORDER BY id_mutasi)
+SET @kode2 = (SELECT TOP 1 id_mutasi FROM @mutasi WHERE status < 20 OR DATEADD(SECOND, 5, tgl_status) > GETDATE() ORDER BY id_mutasi)
 
-SELECT * FROM #mutasi 
+SELECT * FROM @mutasi 
 WHERE @kode2 IS NOT NULL 
 AND id_mutasi < @kode2 
 OR @kode2 IS NULL 
@@ -407,6 +425,7 @@ SET @saldo = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi2)
 
 INSERT INTO @mutasi3
 SELECT kode, nama, debit, kredit FROM @mutasi2
+WHERE debit <> 0 OR kredit <> 0
 UNION ALL
 SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi2
 UNION ALL
@@ -460,6 +479,7 @@ SET @saldo = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi2)
 
 INSERT INTO @mutasi3
 SELECT kode, nama, debit, kredit FROM @mutasi2
+WHERE debit <> 0 OR kredit <> 0
 UNION ALL
 SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi2
 UNION ALL
@@ -534,6 +554,7 @@ SET @saldo2 = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi3)
 
 INSERT INTO @mutasi4
 SELECT kode, nama, debit, kredit FROM @mutasi3
+WHERE debit <> 0 OR kredit <> 0
 UNION ALL
 SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi3
 UNION ALL
@@ -866,6 +887,7 @@ class Model {
             const request = pool.request();
             const result = await request.query(Query.getMutasi);
             let length = result.recordset.length;
+            console.log('recordset',length)
             for (const row of result.recordset) {
                 if (row.jenis == null || row.jenis == "B") {
                     if (row.jumlah > 0) {
@@ -883,7 +905,7 @@ class Model {
                 else if (row.jenis == "O") await this.postJurnalBiayaReply(row);
                 else if (row.jenis == "T") await this.postJurnalTransaksi(row);
                 else if (row.jenis == "G") await this.postJurnalRefund(row);
-                console.log(--length);
+                console.log('row',--length);
             }
             await new Promise((resolve) => setTimeout(resolve, 1000));
         } while (true);

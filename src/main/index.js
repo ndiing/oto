@@ -19,6 +19,7 @@ app.use((req, res, next) => {
     next();
 });
 app.use("/api/akuntansi/v1/", require("./api/akuntansi/v1/index"));
+app.use(express.static('./static'))
 app.use((req, res, next) => {
     next({ code: 404 });
 });
