@@ -2,26 +2,6 @@ const Model = require("./model");
 const moment = require("moment");
 
 class Controller {
-    static async init(req, res, next) {
-        try {
-            const options = Object.assign({}, req.body);
-            const result = await Model.init(options);
-            res.json(result.rowsAffected || []);
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    static async getMutasi(req, res, next) {
-        try {
-            const options = Object.assign({}, req.query);
-            const result = Model.getMutasi(options);
-            res.json(result);
-        } catch (error) {
-            next(error);
-        }
-    }
-
     static async getReseller(req, res, next) {
         try {
             const options = Object.assign({ _start: 0, _end: 20 }, req.query);
@@ -64,6 +44,16 @@ class Controller {
         }
     }
 
+    static async init(req, res, next) {
+        try {
+            const options = Object.assign({}, req.body);
+            const result = await Model.init(options);
+            res.json(result.rowsAffected || []);
+        } catch (error) {
+            next(error);
+        }
+    }
+
     static async getAkun(req, res, next) {
         try {
             const options = Object.assign({ _start: 0, _end: 20 }, req.query);
@@ -83,6 +73,16 @@ class Controller {
             const options = Object.assign({}, req.body);
             const result = await Model.postJurnalUmum(options);
             res.json(result.recordsets?.[0]?.[0] || {});
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async getMutasi(req, res, next) {
+        try {
+            const options = Object.assign({}, req.query);
+            const result = Model.getMutasi(options);
+            res.json(result);
         } catch (error) {
             next(error);
         }
@@ -202,6 +202,7 @@ class Controller {
             next(error);
         }
     }
+    
 }
 
 module.exports = Controller;
