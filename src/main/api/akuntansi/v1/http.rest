@@ -19,7 +19,7 @@ GET http://localhost/api/akuntansi/v1/i-banking
 GET http://localhost/api/akuntansi/v1/modul
 
 ### Data Akun
-GET http://localhost/api/akuntansi/v1/akun?q=modal
+GET http://localhost/api/akuntansi/v1/akun
 
 
 

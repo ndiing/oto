@@ -1,51 +1,52 @@
 const { PoolManager, QueryBuilder } = require("../../../../common/index");
 const mssql = require("mssql/msnodesqlv8");
-const moment = require("moment");
 const Query = {};
 
-Query.init = [`
+Query.init = [
+    `
 USE master
 
 DROP DATABASE IF EXISTS akuntansi 
 
 CREATE DATABASE akuntansi
-`,`
+`,
+    `
 USE akuntansi
 
 CREATE TABLE jurnal (
     id INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    id_mutasi INT NULL,
     tanggal DATETIME NOT NULL,
     bukti VARCHAR(MAX) NULL,
-    keterangan VARCHAR(MAX) NOT NULL
+    keterangan VARCHAR(MAX) NOT NULL,
+    id_mutasi INT NULL
 )
 
 CREATE TABLE akun (
     kode VARCHAR(20) NOT NULL PRIMARY KEY,
+    kelompok VARCHAR(20) NOT NULL,
     nama VARCHAR(50) NOT NULL,
-    kelompok VARCHAR(20) NULL,
-    kelompok2 VARCHAR(20) NULL,
-    saldo MONEY NULL
+    kelompok2 INT NOT NULL
 )
 
 CREATE TABLE mutasi (
     id INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
     id_jurnal INT NOT NULL,
-    id_mutasi INT NULL,
-    id_karyawan VARCHAR(50) NULL,
-    id_pemasok VARCHAR(50) NULL,
-    id_pelanggan VARCHAR(50) NULL,
-    id_konsumen VARCHAR(50) NULL,
-    id_bank VARCHAR(50) NULL,
-    kode_produk VARCHAR(50) NULL,
-    kode_bahan VARCHAR(50) NULL,
-    harga_beli MONEY NULL,
-    harga_jual MONEY NULL,
     kode_akun VARCHAR(50) NOT NULL,
     debit MONEY NULL,
     kredit MONEY NULL,
     saldo MONEY NULL,
-    saldo_akun MONEY NULL
+    saldo_akun MONEY NULL,
+    id_karyawan VARCHAR(50) NULL,
+    id_bank VARCHAR(50) NULL,
+    id_pemasok VARCHAR(50) NULL,
+    id_pelanggan VARCHAR(50) NULL,
+    id_pelanggan2 VARCHAR(50) NULL,
+    id_konsumen VARCHAR(50) NULL,
+    kode_bahan VARCHAR(50) NULL,
+    kode_produk VARCHAR(50) NULL,
+    harga_beli MONEY NULL,
+    harga_jual MONEY NULL,
+    id_mutasi INT NULL,
 )
 
 CREATE TABLE parameter (
@@ -53,134 +54,150 @@ CREATE TABLE parameter (
     nilai VARCHAR(MAX) NULL
 )
 
-INSERT INTO akun (kode,nama,kelompok,kelompok2,saldo)
+INSERT INTO akun (kode,kelompok,nama,kelompok2)
 VALUES
-('1', 'Harta', NULL,'rill',NULL),
-('2', 'Kewajiban', NULL,'rill',NULL),
-('3', 'Modal', NULL,'rill',NULL),
-('4', 'Pendapatan', NULL,'nominal',NULL),
-('5', 'Biaya atas Pendapatan', NULL,'nominal',NULL),
-('6', 'Pengeluaran Operasional', NULL,'nominal',NULL),
-('7', 'Pengeluaran Non Operasional', NULL,'nominal',NULL),
-('8', 'Pendapatan Lain', NULL,'nominal',NULL),
-('9', 'Pengeluaran Lain', NULL,'nominal',NULL),
-('1100', 'Kas', '1','rill',NULL),
-('1200', 'Bank', '1','rill',NULL),
-('1300', 'Piutang Dagang', '1','rill',NULL),
-('1400', 'Persediaan', '1','rill',NULL),
-('1500', 'Biaya Dibayar Dimuka', '1','rill',NULL),
-('1600', 'Investasi Jangka Panjang', '1','rill',NULL),
-('1700', 'Harta Tetap Berwujud', '1','rill',NULL),
-('1800', 'Harta Tetap Tidak Berwujud', '1','rill',NULL),
-('1900', 'Harta Lainnya', '1','rill',NULL),
-('2100', 'Hutang Lancar', '2','rill',NULL),
-('2200', 'Pendapatan yang diterima di muka', '2','rill',NULL),
-('2300', 'Hutang Jangka Panjang', '2','rill',NULL),
-('2400', 'Hutang Lain', '2','rill',NULL),
-('3100', 'Modal', '3','rill',NULL),
-('3200', 'Laba', '3','rill',NULL),
-('4100', 'Pendapatan Usaha', '4','nominal',NULL),
-('4200', 'Pendapatan Lain', '4','nominal',NULL),
-('5100', 'Biaya Produksi', '5','nominal',NULL),
-('5200', 'Biaya Lain', '5','nominal',NULL),
-('6100', 'Biaya Operasional', '6','nominal',NULL),
-('6600', 'Biaya Non Operasional', '6','nominal',NULL),
-('8100', 'Pendapatan Luar Usaha', '8','nominal',NULL),
-('9100', 'Pengeluaran Luar Usaha', '9','nominal',NULL),
-('110000010', 'Kas Kecil', '1100','rill',NULL),
-('110000020', 'Kas', '1100','rill',NULL),
-('110000030', 'Kas (USD)', '1200','rill',NULL),
-('120000010', 'Bank', '1200','rill',NULL),
-('120000020', 'Bank (USD)', '1200','rill',NULL),
-('130000010', 'Piutang Giro', '1300','rill',NULL),
-('130000020', 'Piutang Usaha', '1300','rill',NULL),
-('130000030', 'Piutang Usaha (USD)', '1300','rill',NULL),
-('130000040', 'Cadangan Kerugian Piutang', '1300','rill',NULL),
-('130000050', 'Piutang Non Usaha', '1300','rill',NULL),
-('140000010', 'Persediaan 1', '1400','rill',NULL),
-('140000020', 'Persediaan 2', '1400','rill',NULL),
-('140000030', 'Persediaan 3', '1400','rill',NULL),
-('140000040', 'Persediaan 4', '1400','rill',NULL),
-('150000010', 'Pajak Dibayar di Muka', '1500','rill',NULL),
-('150000020', 'Asuransi Dibayar di Muka', '1500','rill',NULL),
-('160000010', 'Investasi Saham', '1600','rill',NULL),
-('160000020', 'Investasi Obligasi', '1600','rill',NULL),
-('170000010', 'Tanah', '1700','rill',NULL),
-('170000020', 'Bangunan', '1700','rill',NULL),
-('170000021', 'Akumulasi Penyusutan Bangunan', '1700','rill',NULL),
-('170000030', 'Mesin dan Peralatan', '1700','rill',NULL),
-('170000031', 'Akumulasi Penyusutan Mesin dan Peralatan', '1700','rill',NULL),
-('170000040', 'Mebel dan Alat Tulis Kantor', '1700','rill',NULL),
-('170000041', 'Akumulasi Penyusutan Mebel dan ATK', '1700','rill',NULL),
-('170000050', 'Kendaraan', '1700','rill',NULL),
-('170000051', 'Akumulasi Penyusutan Kendaraan', '1700','rill',NULL),
-('170000070', 'Harta Lainnya', '1700','rill',NULL),
-('170000071', 'Akumulasi Penyusutan Harta Lainnya', '1700','rill',NULL),
-('180000010', 'Hak Merek', '1800','rill',NULL),
-('180000020', 'Hak Cipta', '1800','rill',NULL),
-('180000030', 'Good Will', '1800','rill',NULL),
-('190000020', 'Biaya Pra Operasi dan Operasi', '1900','rill',NULL),
-('190000021', 'Akumulasi Amortisasi Pra Operasi dan Operasi', '1900','rill',NULL),
-('210000010', 'Wesel Bayar', '2100','rill',NULL),
-('210000015', 'Hutang Giro', '2100','rill',NULL),
-('210000020', 'Hutang Usaha', '2100','rill',NULL),
-('210000025', 'Hutang Usaha (USD)', '2100','rill',NULL),
-('210000030', 'Hutang Konsinyasi', '2100','rill',NULL),
-('210000040', 'Uang Muka Penjualan', '2100','rill',NULL),
-('210000055', 'Hutang Deviden', '2100','rill',NULL),
-('210000060', 'Hutang Bunga', '2100','rill',NULL),
-('210000065', 'Biaya yang Masih Harus Dibayar', '2100','rill',NULL),
-('210000075', 'Kartu Kredit', '2100','rill',NULL),
-('210000080', 'Hutang Pajak Penjualan', '2100','rill',NULL),
-('210000085', 'Hutang Gaji', '2100','rill',NULL),
-('220000010', 'Sewa Diterima di Muka', '2200','rill',NULL),
-('230000010', 'Pinjaman Hipotik', '2300','rill',NULL),
-('230000020', 'Hutang Bank', '2300','rill',NULL),
-('310000010', 'Saham Preferen', '3100','rill',NULL),
-('310000020', 'Modal Disetor', '3100','rill',NULL),
-('310000030', 'Saham Biasa', '3100','rill',NULL),
-('320000010', 'Laba ditahan', '3200','rill',NULL),
-('320000020', 'Laba Tahun Berjalan', '3200','rill',NULL),
-('320000099', 'Historical Balancing', '3200','rill',NULL),
-('410000010', 'Penjualan Produk 1', '4100','nominal',NULL),
-('410000020', 'Penjualan Produk 2', '4100','nominal',NULL),
-('410000030', 'Penjualan Produk 3', '4100','nominal',NULL),
-('420000040', 'Penjualan Lain', '4200','nominal',NULL),
-('420000070', 'Potongan Penjualan', '4200','nominal',NULL),
-('420000080', 'Pendapatan Denda Keterlambatan', '4200','nominal',NULL),
-('420000090', 'Pendapatan atas Pengantaran', '4200','nominal',NULL),
-('510000010', 'Biaya 1', '5100','nominal',NULL),
-('510000020', 'Biaya 2', '5100','nominal',NULL),
-('510000030', 'Biaya 3', '5100','nominal',NULL),
-('510000070', 'Potongan Pembelian', '5100','nominal',NULL),
-('510000080', 'Biaya atas Pengiriman Barang', '5100','nominal',NULL),
-('520000010', 'Kerugian Piutang', '5200','nominal',NULL),
-('520000020', 'Biaya Denda Keterlambatan', '5200','nominal',NULL),
-('520000030', 'Kerusakan dan Kegagalan Material', '5200','nominal',NULL),
-('610000010', 'Gaji Direksi dan Karyawan', '6100','nominal',NULL),
-('610000030', 'Listrik', '6100','nominal',NULL),
-('610000050', 'Promosi dan Iklan', '6100','nominal',NULL),
-('610000060', 'Administrasi Kantor', '6100','nominal',NULL),
-('660000010', 'Penyusutan Bangunan', '6600','nominal',NULL),
-('660000011', 'Penyusutan Mesin dan Peralatan', '6600','nominal',NULL),
-('660000012', 'Penyusutan Mebel dan ATK', '6600','nominal',NULL),
-('660000013', 'Penyusutan Kendaraan', '6600','nominal',NULL),
-('660000015', 'Penyusutan Harta Lainnya', '6600','nominal',NULL),
-('660000016', 'Amortisasi Pra Operasi dan Operasi', '6600','nominal',NULL),
-('810000020', 'Laba Rugi Selisih Kurs', '8100','nominal',NULL),
-('810000030', 'Hasil Sewa', '8100','nominal',NULL),
-('910000010', 'Biaya Bunga', '9100','nominal',NULL),
-('910000011', 'Jasa Bank', '9100','nominal',NULL),
-('510000040', 'Komisi Penjualan', '5100','nominal',NULL),
-('210000082', 'Hutang Komisi Penjualan', '2100','rill',NULL),
-('130000021', 'Piutang Sementara', '1300','rill',NULL),
-('130000031', 'Piutang Sementara (USD)', '1300','rill',NULL),
-('130000098', 'Uang Muka Pembelian', '1300','rill',NULL),
-('130000099', 'Uang Muka Pembelian (USD)', '1300','rill',NULL),
-('210000098', 'Uang Muka Penjualan', '2100','rill',NULL),
-('210000099', 'Uang Muka Penjualan (USD)', '2100','rill',NULL),
-('140000098', 'Persediaan Dalam Perjalanan Beli', '1400','rill',NULL),
-('140000099', 'Persediaan Dalam Perjalanan Jual', '1400','rill',NULL)
+('1', '0', 'Harta', 0),
+('2', '0', 'Kewajiban', 0),
+('3', '0', 'Modal', 0),
+('4', '0', 'Pendapatan', 1),
+('5', '0', 'Beban Atas Pendapatan', 1),
+('6', '0', 'Beban Operasional', 1),
+('7', '0', 'Beban Non Operasional', 1),
+('8', '0', 'Pendapatan Lain', 1),
+('9', '0', 'Beban Lain', 1),
+('1100', '1', 'Kas', 0),
+('1200', '1', 'Bank', 0),
+('1300', '1', 'Piutang Usaha', 0),
+('1390', '1', 'Piutang Lain', 0),
+('1400', '1', 'Persediaan Barang', 0),
+('1490', '1', 'Persediaan Lain', 0),
+('1510', '1', 'Uang Muka Dibayar', 0),
+('1520', '1', 'Pajak Dibayar Dimuka', 0),
+('1530', '1', 'Biaya Dibayar Dimuka', 0),
+('1600', '1', 'Investasi Jangka Panjang', 0),
+('1700', '1', 'Harta Tetap Berwujud', 0),
+('1710', '1', 'Akumulasi Penyusutan Harta Tetap', 0),
+('1800', '1', 'Harta Tetap Tidak Berwujud', 0),
+('1900', '1', 'Harta Lainnya', 0),
+('2100', '2', 'Utang Usaha', 0),
+('2190', '2', 'Utang Lain', 0),
+('2210', '2', 'Uang Muka Diterima', 0),
+('2220', '2', 'Pendapatan Diterima Dimuka', 0),
+('2300', '2', 'Utang Pajak', 0),
+('2500', '2', 'Utang Jangka Panjang', 0),
+('3100', '3', 'Modal', 0),
+('3200', '3', 'Laba', 0),
+('4100', '4', 'Pendapatan Usaha', 1),
+('4900', '4', 'Pendapatan Lain', 1),
+('5100', '5', 'Beban atas Pendapatan', 1),
+('6100', '6', 'Beban Pemasaran Dan Penjualan', 1),
+('6200', '6', 'Beban Administrasi Dan Umum', 1),
+('6900', '6', 'Beban Operasional Lain', 1),
+('7100', '7', 'Beban Penyusutan', 1),
+('7900', '7', 'Beban Non Operasional Lain', 1),
+('8100', '8', 'Pendapatan Luar Usaha', 1),
+('9100', '9', 'Beban Luar Usaha', 1),
+('9900', '9', 'Beban Pajak', 1),
+('110000010', '1100', 'Kas Kecil', 0),
+('110000020', '1100', 'Kas', 0),
+('110000030', '1200', 'Kas (USD)', 0),
+('120000010', '1200', 'Bank', 0),
+('120000020', '1200', 'Bank (USD)', 0),
+('130000010', '1300', 'Piutang Usaha', 0),
+('130000020', '1300', 'Piutang Usaha (USD)', 0),
+('130000910', '1390', 'Piutang Giro', 0),
+('130000920', '1390', 'Piutang Karyawan', 0),
+('130000990', '1390', 'Piutang Lain', 0),
+('130000999', '1390', 'Cadangan Kerugian Piutang', 0),
+('140000010', '1400', 'Persediaan # 1', 0),
+('140000020', '1400', 'Persediaan # 2', 0),
+('140000030', '1400', 'Persediaan # 3', 0),
+('140000040', '1400', 'Persediaan # 4', 0),
+('140000910', '1490', 'Persediaan Yang Belum Dibebankan', 0),
+('150000110', '1510', 'Uang Muka Pembelian', 0),
+('150000120', '1510', 'Uang Muka Pembelian (USD)', 0),
+('150000130', '1510', 'Uang Muka Pembelian Harta Tetap', 0),
+('150000211', '1520', 'PPN Masukan', 0),
+('150000212', '1520', 'PPh 21 Dibayar Dimuka', 0),
+('150000213', '1520', 'PPh 22 Dibayar Dimuka', 0),
+('150000214', '1520', 'PPh 23 Dibayar Dimuka', 0),
+('150000215', '1520', 'PPh 24 Dibayar Dimuka', 0),
+('150000216', '1520', 'PPh 25 Dibayar Dimuka', 0),
+('150000217', '1520', 'PPh 26 Dibayar Dimuka', 0),
+('150000218', '1520', 'PPh Ps 4 Ayat 2 Dibayar Dimuka', 0),
+('150000310', '1530', 'Sewa Dibayar di Muka', 0),
+('150000320', '1530', 'Asuransi Dibayar di Muka', 0),
+('150000390', '1530', 'Biaya Dibayar di Muka Lain', 0),
+('160000010', '1600', 'Investasi Saham', 0),
+('170000010', '1700', 'Tanah', 0),
+('170000020', '1700', 'Bangunan', 0),
+('170000030', '1700', 'Mesin & Peralatan', 0),
+('170000040', '1700', 'Kendaraan', 0),
+('170000090', '1700', 'Harta Lain', 0),
+('170000120', '1710', 'Akumulasi Penyusutan Bangunan', 0),
+('170000130', '1710', 'Akumulasi Penyusutan Mesin & Peralatan', 0),
+('170000140', '1710', 'Akumulasi Penyusutan Kendaraan', 0),
+('170000190', '1710', 'Akumulasi Penyusutan Harta Lain', 0),
+('180000010', '1800', 'Hak Merek', 0),
+('180000020', '1800', 'Hak Cipta', 0),
+('180000030', '1800', 'Good Will', 0),
+('210000010', '2100', 'Utang Usaha', 0),
+('210000020', '2100', 'Utang Usaha (USD)', 0),
+('210000910', '2190', 'Utang Usaha Yang Belum Ditagih', 0),
+('210000920', '2190', 'Utang Konsinyasi', 0),
+('210000930', '2190', 'Utang Giro', 0),
+('210000940', '2190', 'Utang Gaji & Upah', 0),
+('210000950', '2190', 'Utang Komisi Penjualan', 0),
+('220000110', '2210', 'Uang Muka Penjualan', 0),
+('220000120', '2210', 'Uang Muka Penjualan (USD)', 0),
+('230000011', '2300', 'PPN Keluaran', 0),
+('230000012', '2300', 'Utang PPh 21', 0),
+('230000013', '2300', 'Utang PPh 22', 0),
+('230000014', '2300', 'Utang PPh 23', 0),
+('230000015', '2300', 'Utang PPh 24', 0),
+('230000016', '2300', 'Utang PPh 25', 0),
+('230000017', '2300', 'Utang PPh 26', 0),
+('230000018', '2300', 'Utang PPh Ps 4 Ayat 2', 0),
+('250000010', '2500', 'Utang Bank', 0),
+('250000020', '2500', 'Utang Pembiayaan', 0),
+('310000010', '3100', 'Simpanan Wajib', 0),
+('310000020', '3100', 'Simpanan Pokok', 0),
+('310000030', '3100', 'Simpanan Sukarela', 0),
+('320000010', '3200', 'Dana Cadangan', 0),
+('320000020', '3200', 'SHU', 0),
+('320000099', '3200', 'Historical Balancing', 0),
+('410000010', '4100', 'Penjualan # 1', 1),
+('410000020', '4100', 'Penjualan # 2', 1),
+('410000030', '4100', 'Penjualan # 3', 1),
+('410000040', '4100', 'Potongan Penjualan', 1),
+('490000010', '4900', 'Pendapatan Lain', 1),
+('510000010', '5100', 'Harga Pokok Penjualan # 1', 1),
+('510000020', '5100', 'Harga Pokok Penjualan # 2', 1),
+('510000030', '5100', 'Harga Pokok Penjualan # 3', 1),
+('510000040', '5100', 'Penyesuaian Persediaan', 1),
+('510000050', '5100', 'Beban Pengiriman', 1),
+('510000060', '5100', 'Potongan Pembelian', 1),
+('610000010', '6100', 'Beban Iklan & Promosi', 1),
+('610000020', '6100', 'Beban Komisi Penjualan', 1),
+('610000030', '6100', 'Beban Piutang Tak Tertagih', 1),
+('620000010', '6200', 'Beban Gaji & Upah', 1),
+('620000020', '6200', 'Beban Staff Ahli & Perizinan', 1),
+('620000031', '6200', 'Beban Sewa Kantor', 1),
+('620000032', '6200', 'Beban Listrik', 1),
+('620000033', '6200', 'Beban Air', 1),
+('620000034', '6200', 'Beban Telepon', 1),
+('620000035', '6200', 'Beban Internet', 1),
+('620000040', '6200', 'Beban Perlengkapan', 1),
+('690000010', '6900', 'Beban Lain', 1),
+('710000020', '7100', 'Beban Penyusutan Bangunan', 1),
+('710000030', '7100', 'Beban Penyusutan Mesin & Peralatan', 1),
+('710000040', '7100', 'Beban Penyusutan Kendaraan', 1),
+('710000090', '7100', 'Beban Penyusutan Harta Lain', 1),
+('810000010', '8100', 'Laba (Rugi) Selisih Kurs', 1),
+('810000020', '8100', 'Laba (Rugi) Penjualan Harta Tetap', 1),
+('910000011', '9100', 'Beban Bunga Bank', 1),
+('910000012', '9100', 'Beban Jasa Bank', 1),
+('990000010', '9900', 'Beban Pajak Penghasilan', 1)
 
 USE otomax
 
@@ -194,7 +211,6 @@ DECLARE @jurnal TABLE(
 )
 DECLARE @id_jurnal INT
 
--- id_jurnal?
 INSERT INTO akuntansi.dbo.jurnal
     (tanggal,keterangan)
 OUTPUT inserted.id INTO @jurnal
@@ -219,18 +235,18 @@ INSERT INTO akuntansi.dbo.mutasi
     (id_jurnal,kode_akun,saldo_akun)
 SELECT @id_jurnal, '320000099', @saldo
 
--- "kode": "210000098",
+-- "kode": "220000110",
 -- "nama": "Uang Muka Penjualan",
 INSERT INTO akuntansi.dbo.mutasi
     (id_jurnal,kode_akun,id_pelanggan,saldo,saldo_akun)
-SELECT @id_jurnal, '210000098', kode, 0 - saldo, SUM(0 - saldo) OVER(ORDER BY kode)
+SELECT @id_jurnal, '220000110', kode, 0 - saldo, SUM(0 - saldo) OVER(ORDER BY kode)
 FROM reseller
 
--- "kode": "210000082",
+-- "kode": "210000950",
 -- "nama": "Hutang Komisi Penjualan",
 INSERT INTO akuntansi.dbo.mutasi
     (id_jurnal,kode_akun,id_pelanggan,saldo,saldo_akun)
-SELECT @id_jurnal, '210000082', kode, 0 - saldo, SUM(0 - saldo) OVER(ORDER BY kode)
+SELECT @id_jurnal, '210000950', kode, 0 - saldo, SUM(0 - saldo) OVER(ORDER BY kode)
 FROM @komisi
 
 DECLARE @id_mutasi INT = ISNULL((SELECT TOP 1
@@ -249,14 +265,11 @@ BEGIN
     VALUES
         ('id_mutasi', @id_mutasi)
 END
-`];
+`,
+];
 Query.postJurnal = `
 USE akuntansi
 
--- DECLARE @id_mutasi INT = 123456789
--- DECLARE @tanggal DATETIME = GETDATE()
--- DECLARE @bukti VARCHAR(MAX)
--- DECLARE @keterangan VARCHAR(MAX) = 'keterangan'
 DECLARE @jurnal TABLE(id INT)
 
 INSERT INTO jurnal (id_mutasi, tanggal, bukti, keterangan)
@@ -268,23 +281,6 @@ SELECT id FROM @jurnal
 Query.postMutasi = `
 USE akuntansi
 
--- DECLARE @id_jurnal INT
--- DECLARE @id_mutasi INT
-
--- DECLARE @id_karyawan VARCHAR(20)
--- DECLARE @id_pemasok VARCHAR(20)
--- DECLARE @id_pelanggan VARCHAR(20) = 'AAA0000001'
--- DECLARE @id_konsumen VARCHAR(20)
--- DECLARE @id_bank VARCHAR(20)
--- DECLARE @kode_produk VARCHAR(20)
--- DECLARE @kode_bahan VARCHAR(20)
--- DECLARE @harga_beli MONEY
--- DECLARE @harga_jual MONEY
-
--- DECLARE @kode_akun VARCHAR(20) = '210000098'
--- DECLARE @debit MONEY = 0
--- DECLARE @kredit MONEY = 1000000
-
 DECLARE @saldo MONEY
 
 -- "kode": "120000010",
@@ -293,21 +289,21 @@ IF @kode_akun = '120000010' AND ( @id_bank IS NOT NULL AND @id_bank <> '' )
 BEGIN
     SET @saldo = ISNULL((SELECT TOP 1 saldo FROM mutasi WHERE kode_akun = @kode_akun AND id_bank = @id_bank ORDER BY id DESC), 0) + (@debit - @kredit)
 END
--- "kode": "130000098",
+-- "kode": "150000110",
 -- "nama": "Uang Muka Pembelian",
-ELSE IF @kode_akun = '130000098' AND ( @id_pemasok IS NOT NULL AND @id_pemasok <> '' )
+ELSE IF @kode_akun = '150000110' AND ( @id_pemasok IS NOT NULL AND @id_pemasok <> '' )
 BEGIN
     SET @saldo = ISNULL((SELECT TOP 1 saldo FROM mutasi WHERE kode_akun = @kode_akun AND id_pemasok = @id_pemasok ORDER BY id DESC), 0) + (@debit - @kredit)
 END
--- "kode": "210000098",
+-- "kode": "220000110",
 -- "nama": "Uang Muka Penjualan",
-ELSE IF @kode_akun = '210000098' AND ( @id_pelanggan IS NOT NULL AND @id_pelanggan <> '' )
+ELSE IF @kode_akun = '220000110' AND ( @id_pelanggan IS NOT NULL AND @id_pelanggan <> '' )
 BEGIN
     SET @saldo = ISNULL((SELECT TOP 1 saldo FROM mutasi WHERE kode_akun = @kode_akun AND id_pelanggan = @id_pelanggan ORDER BY id DESC), 0) + (@debit - @kredit)
 END
--- "kode": "210000082",
+-- "kode": "210000950",
 -- "nama": "Hutang Komisi Penjualan",
-ELSE IF @kode_akun = '210000082' AND ( @id_pelanggan IS NOT NULL AND @id_pelanggan <> '' )
+ELSE IF @kode_akun = '210000950' AND ( @id_pelanggan IS NOT NULL AND @id_pelanggan <> '' )
 BEGIN
     SET @saldo = ISNULL((SELECT TOP 1 saldo FROM mutasi WHERE kode_akun = @kode_akun AND id_pelanggan = @id_pelanggan ORDER BY id DESC), 0) + (@debit - @kredit)
 END
@@ -402,8 +398,6 @@ DECLARE @mutasi3 TABLE (
     kredit MONEY
 )
 DECLARE @saldo MONEY
--- DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
--- DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
 
 INSERT INTO @mutasi
 SELECT mutasi.kode_akun, mutasi.saldo_akun
@@ -430,8 +424,6 @@ UNION ALL
 SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi2
 UNION ALL
 SELECT '', '', CASE WHEN @saldo > 0 THEN @saldo ELSE '' END, CASE WHEN @saldo < 0 THEN ABS(@saldo) ELSE '' END
-
---SELECT * FROM @mutasi3
 `;
 Query.getLabaRugi = `
 USE akuntansi
@@ -442,8 +434,8 @@ DECLARE @mutasi TABLE (
 )
 DECLARE @mutasi2 TABLE (
     kode VARCHAR(20),
-    nama VARCHAR(MAX),
     kelompok2 VARCHAR(20),
+    nama VARCHAR(MAX),
     debit MONEY,
     kredit MONEY
 )
@@ -454,8 +446,6 @@ DECLARE @mutasi3 TABLE (
     kredit MONEY
 )
 DECLARE @saldo MONEY
---DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
---DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
 
 INSERT INTO @mutasi
 SELECT mutasi.kode_akun, mutasi.saldo_akun
@@ -467,13 +457,13 @@ AND jurnal.tanggal BETWEEN @tanggal1 AND @tanggal2
 INSERT INTO @mutasi2
 SELECT 
     akun.kode,
-    akun.nama,
     akun.kelompok2,
+    akun.nama,
     CASE WHEN m.saldo_akun > 0 THEN m.saldo_akun ELSE 0 END AS debit,
     CASE WHEN m.saldo_akun < 0 THEN ABS(m.saldo_akun) ELSE 0 END AS kredit
 FROM @mutasi m
 FULL JOIN akun ON akun.kode = m.kode_akun
-WHERE akun.kelompok2 = 'nominal'
+WHERE akun.kelompok2 = 1
 
 SET @saldo = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi2)
 
@@ -484,8 +474,6 @@ UNION ALL
 SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi2
 UNION ALL
 SELECT '', '', CASE WHEN @saldo > 0 THEN @saldo ELSE '' END, CASE WHEN @saldo < 0 THEN ABS(@saldo) ELSE '' END
-
---SELECT * FROM @mutasi3
 `;
 Query.getNeraca = `
 USE akuntansi
@@ -496,8 +484,8 @@ DECLARE @mutasi TABLE (
 )
 DECLARE @mutasi2 TABLE (
     kode VARCHAR(20),
-    nama VARCHAR(MAX),
     kelompok2 VARCHAR(20),
+    nama VARCHAR(MAX),
     debit MONEY,
     kredit MONEY
 )
@@ -515,8 +503,6 @@ DECLARE @mutasi4 TABLE (
 )
 DECLARE @saldo MONEY
 DECLARE @saldo2 MONEY
---DECLARE @tanggal1 DATETIME = CAST('2022-05-31T17:00:00.000Z' AS DATETIME)
---DECLARE @tanggal2 DATETIME = CAST('2022-06-30T16:59:59.999Z' AS DATETIME)
 
 INSERT INTO @mutasi
 SELECT mutasi.kode_akun, mutasi.saldo_akun
@@ -528,15 +514,15 @@ AND jurnal.tanggal BETWEEN @tanggal1 AND @tanggal2
 INSERT INTO @mutasi2
 SELECT 
     akun.kode,
-    akun.nama,
     akun.kelompok2,
+    akun.nama,
     CASE WHEN m.saldo_akun > 0 THEN m.saldo_akun ELSE 0 END AS debit,
     CASE WHEN m.saldo_akun < 0 THEN ABS(m.saldo_akun) ELSE 0 END AS kredit
 FROM @mutasi m
 FULL JOIN akun ON akun.kode = m.kode_akun
 
 SET @saldo = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi2
-WHERE kelompok2 = 'nominal')
+WHERE kelompok2 = 1)
 
 -- "kode": "320000020",
 -- "nama": "Laba Tahun Berjalan",
@@ -548,7 +534,7 @@ WHERE kode = '320000020'
 
 INSERT INTO @mutasi3
 SELECT kode, nama, debit, kredit FROM @mutasi2
-WHERE kelompok2 = 'rill'
+WHERE kelompok2 = 0
 
 SET @saldo2 = (SELECT SUM(debit) - SUM(kredit) FROM @mutasi3)
 
@@ -559,9 +545,48 @@ UNION ALL
 SELECT '', '', SUM(debit), SUM(kredit) FROM @mutasi3
 UNION ALL
 SELECT '', '', CASE WHEN @saldo2 > 0 THEN @saldo2 ELSE '' END, CASE WHEN @saldo2 < 0 THEN ABS(@saldo2) ELSE '' END
-
---SELECT * FROM @mutasi4
 `;
+Query.getAkun = `
+USE akuntansi
+
+-- DECLARE @kelompok VARCHAR(20) = '0'
+DECLARE @akun TABLE (
+    kode VARCHAR(20) NOT NULL PRIMARY KEY,
+    kelompok VARCHAR(20) NOT NULL,
+    nama VARCHAR(50) NOT NULL,
+    kelompok2 INT NOT NULL,
+	level INT NOT NULL
+)
+
+;WITH akun2 AS (
+    SELECT kode,
+        kelompok,
+        nama,
+        kelompok2,
+		0 AS level
+    FROM akun
+    WHERE kelompok = @kelompok
+    UNION ALL
+    SELECT a.kode,
+        a.kelompok,
+        a.nama,
+        a.kelompok2,
+		level + 1 AS level
+    FROM akun a
+        JOIN akun2 a2 ON a2.kode = a.kelompok
+)
+
+INSERT INTO @akun
+SELECT kode,
+    kelompok,
+    nama,
+    kelompok2,
+	level
+FROM akun2
+ORDER BY kode
+
+-- SELECT * FROM @akun
+`
 
 class Model {
     static async getReseller(options = {}) {
@@ -635,17 +660,21 @@ class Model {
             _limit: { type: mssql.Int },
             kode: { type: mssql.VarChar, searchable: true },
             nama: { type: mssql.VarChar, searchable: true },
-            kelompok: { type: mssql.VarChar, searchable: true },
-            kelompok2: { type: mssql.VarChar, searchable: true },
+            // kelompok: { type: mssql.VarChar, searchable: true },
+            // kelompok2: { type: mssql.VarChar, searchable: true },
         };
-        const _query = `USE akuntansi
-        SELECT * FROM akun
+        const {kelompok,...options2} = options
+        const input2 = [
+            [ 'kelompok', mssql.VarChar, kelompok ]
+        ]
+        const _query = `SELECT kode, nama FROM @akun
         `;
-        const [query, input] = QueryBuilder.parse(_query, options, columns);
+        const [query, input] = QueryBuilder.parse(_query, options2, columns);
         const pool = await PoolManager.get();
         const request = pool.request();
-        input.forEach(([column, type, value]) => request.input(column, type, value));
-        const result = await request.query(query);
+        input.concat(input2).forEach(([column, type, value]) => request.input(column, type, value));
+        console.log(Query.getAkun+query,input.concat(input2))
+        const result = await request.query(Query.getAkun+query);
         return result;
     }
 
@@ -721,20 +750,11 @@ class Model {
 
     static async postJurnalUmum(options = {}) {
         const { rows, ...jurnal } = options;
-        let id_jurnal;
-        if (!(rows[0].debit > 0)) {
-            throw { code: 400, message: "Pencatatan tidak sesuai." };
-        }
-        if (!(rows.reduce((p, c) => p + (c.debit - c.kredit), 0) == 0)) {
-            throw { code: 400, message: "Saldo tidak seimbang." };
-        }
         const result = await Model.postJurnal(jurnal);
-        // console.log(jurnal);
-        id_jurnal = result.recordsets?.[0]?.[0]?.["id"];
+        let id_jurnal = result.recordsets?.[0]?.[0]?.["id"];
         for (const row of rows) {
             const mutasi = Object.assign(jurnal, row, { id_jurnal });
             await Model.postMutasi(mutasi);
-            // console.log(mutasi);
         }
         return result;
     }
@@ -745,7 +765,7 @@ class Model {
             Object.assign(options, {
                 rows: [
                     { kode_akun: "110000020", debit: options.jumlah, kredit: 0 },
-                    { kode_akun: "210000098", debit: 0, kredit: options.jumlah },
+                    { kode_akun: "220000110", debit: 0, kredit: options.jumlah },
                 ],
             })
         );
@@ -756,7 +776,7 @@ class Model {
             Object.assign(options, {
                 rows: [
                     { kode_akun: "120000010", debit: options.jumlah, kredit: 0 },
-                    { kode_akun: "210000098", debit: 0, kredit: options.jumlah },
+                    { kode_akun: "220000110", debit: 0, kredit: options.jumlah },
                 ],
             })
         );
@@ -766,7 +786,7 @@ class Model {
         return this.postJurnalUmum(
             Object.assign(options, {
                 rows: [
-                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "220000110", debit: options.jumlah, kredit: 0 },
                     { kode_akun: "110000020", debit: 0, kredit: options.jumlah },
                 ],
             })
@@ -777,7 +797,7 @@ class Model {
         return this.postJurnalUmum(
             Object.assign(options, {
                 rows: [
-                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "220000110", debit: options.jumlah, kredit: 0 },
                     { kode_akun: "120000010", debit: 0, kredit: options.jumlah },
                 ],
             })
@@ -788,8 +808,8 @@ class Model {
         return this.postJurnalUmum(
             Object.assign(options, {
                 rows: [
-                    { kode_akun: "210000082", debit: options.jumlah, kredit: 0 },
-                    { kode_akun: "210000098", debit: 0, kredit: options.jumlah },
+                    { kode_akun: "210000950", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "220000110", debit: 0, kredit: options.jumlah },
                 ],
             })
         );
@@ -799,8 +819,8 @@ class Model {
         return this.postJurnalUmum(
             Object.assign(options, {
                 rows: [
-                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
-                    { kode_akun: "210000082", debit: 0, kredit: options.jumlah },
+                    { kode_akun: "220000110", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "210000950", debit: 0, kredit: options.jumlah },
                 ],
             })
         );
@@ -810,7 +830,7 @@ class Model {
         return this.postJurnalUmum(
             Object.assign(options, {
                 rows: [
-                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "220000110", debit: options.jumlah, kredit: 0 },
                     { kode_akun: "320000099", debit: 0, kredit: options.jumlah },
                 ],
             })
@@ -822,7 +842,7 @@ class Model {
             Object.assign(options, {
                 rows: [
                     { kode_akun: "320000099", debit: options.jumlah, kredit: 0 },
-                    { kode_akun: "210000098", debit: 0, kredit: options.jumlah },
+                    { kode_akun: "220000110", debit: 0, kredit: options.jumlah },
                 ],
             })
         );
@@ -832,8 +852,8 @@ class Model {
         return this.postJurnalUmum(
             Object.assign(options, {
                 rows: [
-                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
-                    { kode_akun: "420000040", debit: 0, kredit: options.jumlah },
+                    { kode_akun: "220000110", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "490000010", debit: 0, kredit: options.jumlah },
                 ],
             })
         );
@@ -843,16 +863,16 @@ class Model {
         return this.postJurnalUmum(
             Object.assign(options, {
                 rows: [
-                    { kode_akun: "210000098", debit: options.jumlah, kredit: 0 },
+                    { kode_akun: "220000110", debit: options.jumlah, kredit: 0 },
                     { kode_akun: "410000010", debit: 0, kredit: options.jumlah },
                     ...((options.harga_beli && [
                         { kode_akun: "510000010", debit: options.harga_beli, kredit: 0 },
-                        { kode_akun: "130000098", debit: 0, kredit: options.harga_beli },
+                        { kode_akun: "150000110", debit: 0, kredit: options.harga_beli },
                     ]) ||
                         []),
                     ...((options.komisi && [
-                        { kode_akun: "510000040", debit: options.komisi, kredit: 0 },
-                        { kode_akun: "210000082", debit: 0, kredit: options.komisi },
+                        { kode_akun: "610000020", debit: options.komisi, kredit: 0 },
+                        { kode_akun: "210000950", debit: 0, kredit: options.komisi },
                     ]) ||
                         []),
                 ],
@@ -865,15 +885,15 @@ class Model {
             Object.assign(options, {
                 rows: [
                     { kode_akun: "410000010", debit: options.jumlah, kredit: 0 },
-                    { kode_akun: "210000098", debit: 0, kredit: options.jumlah },
+                    { kode_akun: "220000110", debit: 0, kredit: options.jumlah },
                     ...((options.harga_beli && [
-                        { kode_akun: "130000098", debit: options.harga_beli, kredit: 0 },
+                        { kode_akun: "150000110", debit: options.harga_beli, kredit: 0 },
                         { kode_akun: "510000010", debit: 0, kredit: options.harga_beli },
                     ]) ||
                         []),
                     ...((options.komisi && [
-                        { kode_akun: "210000082", debit: options.komisi, kredit: 0 },
-                        { kode_akun: "510000040", debit: 0, kredit: options.komisi },
+                        { kode_akun: "210000950", debit: options.komisi, kredit: 0 },
+                        { kode_akun: "610000020", debit: 0, kredit: options.komisi },
                     ]) ||
                         []),
                 ],
@@ -886,8 +906,7 @@ class Model {
             const pool = await PoolManager.get();
             const request = pool.request();
             const result = await request.query(Query.getMutasi);
-            let length = result.recordset.length;
-            console.log('recordset',length)
+            console.log(result.recordset.length);
             for (const row of result.recordset) {
                 if (row.jenis == null || row.jenis == "B") {
                     if (row.jumlah > 0) {
@@ -905,7 +924,7 @@ class Model {
                 else if (row.jenis == "O") await this.postJurnalBiayaReply(row);
                 else if (row.jenis == "T") await this.postJurnalTransaksi(row);
                 else if (row.jenis == "G") await this.postJurnalRefund(row);
-                console.log('row',--length);
+                console.log(row);
             }
             await new Promise((resolve) => setTimeout(resolve, 1000));
         } while (true);
@@ -916,18 +935,18 @@ class Model {
             _start: { type: mssql.Int },
             _limit: { type: mssql.Int },
         };
-        const {tanggal1,tanggal2,...options2} = options
+        const { tanggal1, tanggal2, ...options2 } = options;
         const _query = `SELECT * FROM @mutasi3
         `;
         const [query, input] = QueryBuilder.parse(_query, options2, columns);
         const input2 = [
-            ['tanggal1', mssql.DateTime, tanggal1],
-            ['tanggal2', mssql.DateTime, tanggal2],
-        ]
+            ["tanggal1", mssql.DateTime, tanggal1],
+            ["tanggal2", mssql.DateTime, tanggal2],
+        ];
         const pool = await PoolManager.get();
         const request = pool.request();
         input.concat(input2).forEach(([column, type, value]) => request.input(column, type, value));
-        const result = await request.query(Query.getNeracaSaldo+query);
+        const result = await request.query(Query.getNeracaSaldo + query);
         return result;
     }
 
@@ -936,18 +955,18 @@ class Model {
             _start: { type: mssql.Int },
             _limit: { type: mssql.Int },
         };
-        const {tanggal1,tanggal2,...options2} = options
+        const { tanggal1, tanggal2, ...options2 } = options;
         const _query = `SELECT * FROM @mutasi3
         `;
         const [query, input] = QueryBuilder.parse(_query, options2, columns);
         const input2 = [
-            ['tanggal1', mssql.DateTime, tanggal1],
-            ['tanggal2', mssql.DateTime, tanggal2],
-        ]
+            ["tanggal1", mssql.DateTime, tanggal1],
+            ["tanggal2", mssql.DateTime, tanggal2],
+        ];
         const pool = await PoolManager.get();
         const request = pool.request();
         input.concat(input2).forEach(([column, type, value]) => request.input(column, type, value));
-        const result = await request.query(Query.getLabaRugi+query);
+        const result = await request.query(Query.getLabaRugi + query);
         return result;
     }
 
@@ -956,26 +975,70 @@ class Model {
             _start: { type: mssql.Int },
             _limit: { type: mssql.Int },
         };
-        const {tanggal1,tanggal2,...options2} = options
+        const { tanggal1, tanggal2, ...options2 } = options;
         const _query = `SELECT * FROM @mutasi4
         `;
         const [query, input] = QueryBuilder.parse(_query, options2, columns);
         const input2 = [
-            ['tanggal1', mssql.DateTime, tanggal1],
-            ['tanggal2', mssql.DateTime, tanggal2],
-        ]
+            ["tanggal1", mssql.DateTime, tanggal1],
+            ["tanggal2", mssql.DateTime, tanggal2],
+        ];
         const pool = await PoolManager.get();
         const request = pool.request();
         input.concat(input2).forEach(([column, type, value]) => request.input(column, type, value));
-        const result = await request.query(Query.getNeraca+query);
+        const result = await request.query(Query.getNeraca + query);
         return result;
     }
-
 }
 
 module.exports = Model;
 
-// console.log(
-//     moment('2022-03').startOf('month').toISOString(),
-//     moment('2022-03').endOf('month').toISOString(),
-// )
+// akun penting
+// ongkos kirim pembelian=beban pengiriman
+// ongkos kirim penjualan=pendapatan lain
+// potongan pembelian=potongan pembelian
+// potongan penjualan=potongan penjualan
+// denda keterlambatan beli=beban lain
+// denda keterlambatan jual=pendapatan lain
+// laba tahun berjalan=shu
+// laba ditahan=dana cadangan
+// pengimbang neraca=historical balance
+// komisi penjualan=beban komisi penjualan
+// hutang komisi penjualan=utang komisi penjualan
+
+// harga pokok=harga pokok penjualan
+// penjualan=penjualan
+// persediaan=persediaan
+// pengiriman beli=utang usaha yang belum ditagih
+// pengiriman jual=persediaan yang belum dibebankan
+// retur penjualan=penjualan
+// konsinyasi=utang konsinyasi
+
+// informasi perusahaan
+// nama perusahaan=
+// alamat perusahaan=
+// negara  
+// kota=
+// kode pos=
+// telp=
+// email=
+// website=
+
+// periode akuntansi
+// bulan=
+// tahun=
+// tutup buku akhir tahun=
+
+// faktur pajak
+// npwp=
+// pkp=
+// tanggal pkp=
+// nomor seri=
+// nomor urut terakhir=
+// alamat pkp=
+// kota pkp=
+// format tax version=
+
+// penandatanganan faktur pajak
+// nama
+// jabatan

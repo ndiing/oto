@@ -1,5 +1,5 @@
 const Model = require("./model");
-const moment = require("moment");
+const {moment} = require("../../../../common/index.js");
 
 class Controller {
     static async getReseller(req, res, next) {
@@ -56,7 +56,14 @@ class Controller {
 
     static async getAkun(req, res, next) {
         try {
-            const options = Object.assign({ _start: 0, _end: 20 }, req.query);
+            const options = Object.assign(
+                {
+                    _start: 0,
+                    _end: 20,
+                    kelompok: '0'
+                },
+                req.query
+            );
             const result = await Model.getAkun(options);
             res.set({
                 "X-Total-Count": result.recordsets?.[0]?.[0]?.[""] || 0,
@@ -202,7 +209,6 @@ class Controller {
             next(error);
         }
     }
-    
 }
 
 module.exports = Controller;
