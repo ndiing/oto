@@ -673,7 +673,6 @@ class Model {
         const pool = await PoolManager.get();
         const request = pool.request();
         input.concat(input2).forEach(([column, type, value]) => request.input(column, type, value));
-        console.log(Query.getAkun+query,input.concat(input2))
         const result = await request.query(Query.getAkun+query);
         return result;
     }
