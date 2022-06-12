@@ -131,6 +131,7 @@ class Model {
     static async postJurnal(options = {}) {
         const pool = await PoolManager.get();
         const request = pool.request();
+        request.input("kode", mssql.Int, options.kode);
         request.input("id_mutasi", mssql.Int, options.id_mutasi);
         request.input("tanggal", mssql.DateTime, options.tanggal);
         request.input("bukti", mssql.VarChar, options.bukti);

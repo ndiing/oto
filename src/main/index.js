@@ -23,6 +23,12 @@ app.use((req, res, next) => {
     next();
 });
 app.use("/api/akuntansi/v1/", require("./api/akuntansi/v1/index"));
+app.use("/data.js", (req,res) => {
+    res.type('.js')
+    let js = ''
+    js+=`window.baseUrl=http://ndiing.ddns.net\n`
+    res.send(js)
+});
 app.use(express.static("./static"));
 app.use((req, res, next) => {
     next({ code: 404 });

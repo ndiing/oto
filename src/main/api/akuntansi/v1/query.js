@@ -1,4 +1,4 @@
-const Query = {}
+const Query = {};
 
 Query.init = [
     `
@@ -211,10 +211,10 @@ DECLARE @jurnal TABLE(
 DECLARE @id_jurnal INT
 
 INSERT INTO akuntansi.dbo.jurnal
-    (tanggal,keterangan)
+    (kode,tanggal,keterangan)
 OUTPUT inserted.id INTO @jurnal
 VALUES
-    (GETDATE(), 'Saldo Awal')
+    ('JU',GETDATE(), 'Saldo Awal')
 
 INSERT INTO @komisi
 SELECT kode_reseller, SUM(jumlah)
@@ -272,9 +272,9 @@ USE akuntansi
 
 DECLARE @jurnal TABLE(id INT)
 
-INSERT INTO jurnal (id_mutasi, tanggal, bukti, keterangan)
+INSERT INTO jurnal (kode,id_mutasi, tanggal, bukti, keterangan)
 OUTPUT inserted.id INTO @jurnal
-VALUES (@id_mutasi, @tanggal, @bukti, @keterangan)
+VALUES (@kode,@id_mutasi, @tanggal, @bukti, @keterangan)
 
 SELECT id FROM @jurnal
 `;
@@ -593,4 +593,4 @@ ORDER BY kode
 
 -- SELECT * FROM @akun
 `;
-module.exports=Query
+module.exports = Query;
