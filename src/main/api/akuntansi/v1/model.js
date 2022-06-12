@@ -287,7 +287,7 @@ class Model {
     static async postJurnalDeposit(options = {}) {
         options.jumlah = Math.abs(options.jumlah);
         return this.postJurnalUmum(
-            Object.assign({ kode: "JU" }, options, {
+            Object.assign({ kode: "JM" }, options, {
                 rows: [
                     { kode_akun: "110000020", debit: options.jumlah, kredit: 0 },
                     { kode_akun: "220000110", debit: 0, kredit: options.jumlah },
@@ -299,7 +299,7 @@ class Model {
     static async postJurnalTiketDeposit(options = {}) {
         options.jumlah = Math.abs(options.jumlah);
         return this.postJurnalUmum(
-            Object.assign({ kode: "JU" }, options, {
+            Object.assign({ kode: "JM" }, options, {
                 rows: [
                     { kode_akun: "120000010", debit: options.jumlah, kredit: 0 },
                     { kode_akun: "220000110", debit: 0, kredit: options.jumlah },
@@ -383,7 +383,7 @@ class Model {
     static async postJurnalBiayaReply(options = {}) {
         options.jumlah = Math.abs(options.jumlah);
         return this.postJurnalUmum(
-            Object.assign({ kode: "JU" }, options, {
+            Object.assign({ kode: "JM" }, options, {
                 rows: [
                     { kode_akun: "220000110", debit: options.jumlah, kredit: 0 },
                     { kode_akun: "490000010", debit: 0, kredit: options.jumlah },
@@ -395,7 +395,7 @@ class Model {
     static async postJurnalTransaksi(options = {}) {
         options.jumlah = Math.abs(options.jumlah);
         return this.postJurnalUmum(
-            Object.assign({ kode: "JU" }, options, {
+            Object.assign({ kode: "JM" }, options, {
                 rows: [
                     { kode_akun: "220000110", debit: options.jumlah, kredit: 0 },
                     { kode_akun: "410000010", debit: 0, kredit: options.jumlah },
