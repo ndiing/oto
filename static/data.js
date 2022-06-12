@@ -1,0 +1,1 @@
+window.baseUrl='http://ndiing.ddns.net'
