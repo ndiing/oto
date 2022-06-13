@@ -2,6 +2,26 @@ const Model = require("./model");
 const { moment } = require("../../../../common/index.js");
 
 class Controller {
+    static async init(req, res, next) {
+        try {
+            const options = Object.assign({}, req.body);
+            const result = await Model.init(options);
+            res.json(result.rowsAffected || []);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async getMutasi(req, res, next) {
+        try {
+            const options = Object.assign({}, req.query);
+            const result = Model.getMutasi(options);
+            res.json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
     static async getReseller(req, res, next) {
         try {
             const options = Object.assign({ _start: 0, _end: 20 }, req.query);
@@ -44,16 +64,6 @@ class Controller {
         }
     }
 
-    static async init(req, res, next) {
-        try {
-            const options = Object.assign({}, req.body);
-            const result = await Model.init(options);
-            res.json(result.rowsAffected || []);
-        } catch (error) {
-            next(error);
-        }
-    }
-
     static async getAkun(req, res, next) {
         try {
             const options = Object.assign(
@@ -70,33 +80,6 @@ class Controller {
                 "Access-Control-Expose-Headers": "X-Total-Count",
             });
             res.json(result.recordsets?.[1] || []);
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    static async postJurnalUmum(req, res, next) {
-        try {
-            const options = Object.assign(
-                {
-                    tanggal: moment().toISOString(),
-                    bukti: '',
-                },
-                req.body
-            );
-            console.log(options)
-            const result = await Model.postJurnalUmum(options);
-            res.json(result.recordsets?.[0]?.[0] || {});
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    static async getMutasi(req, res, next) {
-        try {
-            const options = Object.assign({}, req.query);
-            const result = Model.getMutasi(options);
-            res.json(result);
         } catch (error) {
             next(error);
         }
@@ -215,6 +198,24 @@ class Controller {
                 "Access-Control-Expose-Headers": "X-Total-Count",
             });
             res.json(result.recordsets?.[1] || []);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async postJurnalUmum(req, res, next) {
+        try {
+            const options = Object.assign(
+                {
+                    kode: "JU",
+                    tanggal: moment().toISOString(),
+                    bukti: "",
+                },
+                req.body
+            );
+
+            const result = await Model.postJurnalUmum(options);
+            res.json(result.recordsets?.[0]?.[0] || {});
         } catch (error) {
             next(error);
         }

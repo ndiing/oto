@@ -285,13 +285,11 @@ class Model {
             }
         */
         jurnal = Object.assign({ kode: "JU" }, jurnal);
-        console.log(jurnal);
         const result = await Model.postJurnal(jurnal);
         let id_jurnal = result.recordsets?.[0]?.[0]?.["id"];
 
         for (const row of rows) {
             const mutasi = Object.assign(jurnal, row, { id_jurnal });
-            console.log(mutasi);
             await Model.postMutasi(mutasi);
         }
         return result;
