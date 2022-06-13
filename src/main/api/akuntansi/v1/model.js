@@ -116,6 +116,13 @@ class Model {
             tanggal1: { type: mssql.DateTime },
             tanggal2: { type: mssql.DateTime },
         };
+        if(
+            !options.id_bank&&
+            !options.id_pemasok&&
+            !options.id_pelanggan
+        ){
+            return { recordsets: [[{'':0}],[]] }
+        }
         const _query = `USE akuntansi
         SELECT jurnal.tanggal, jurnal.keterangan, mutasi.kode_akun, mutasi.debit, mutasi.kredit, mutasi.saldo FROM mutasi
         INNER JOIN jurnal ON jurnal.id = mutasi.id_jurnal
@@ -124,6 +131,7 @@ class Model {
         const pool = await PoolManager.get();
         const request = pool.request();
         input.forEach(([column, type, value]) => request.input(column, type, value));
+        console.log(query)
         const result = await request.query(query);
         return result;
     }
@@ -131,7 +139,7 @@ class Model {
     static async postJurnal(options = {}) {
         const pool = await PoolManager.get();
         const request = pool.request();
-        request.input("kode", mssql.Int, options.kode);
+        request.input("kode", mssql.VarChar, options.kode);
         request.input("id_mutasi", mssql.Int, options.id_mutasi);
         request.input("tanggal", mssql.DateTime, options.tanggal);
         request.input("bukti", mssql.VarChar, options.bukti);
@@ -259,7 +267,7 @@ class Model {
     // JM=Jurnal Penerimaan
 
     static async postJurnalUmum(options = {}) {
-        const { rows, ...jurnal } = options;
+        let { rows, ...jurnal } = options;
         /* 
             {
                 kode,
@@ -276,11 +284,15 @@ class Model {
                 ]
             }
         */
-        const result = await Model.postJurnal(Object.assign({ kode: "JU" }, jurnal));
+        jurnal = Object.assign({ kode: "JU" }, jurnal);
+        console.log(jurnal);
+        const result = await Model.postJurnal(jurnal);
         let id_jurnal = result.recordsets?.[0]?.[0]?.["id"];
 
         for (const row of rows) {
-            await Model.postMutasi(Object.assign(jurnal, row, { id_jurnal }));
+            const mutasi = Object.assign(jurnal, row, { id_jurnal });
+            console.log(mutasi);
+            await Model.postMutasi(mutasi);
         }
         return result;
     }

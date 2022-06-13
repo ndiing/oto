@@ -50,6 +50,7 @@ CREATE TABLE mutasi (
 
 CREATE TABLE parameter (
     nama VARCHAR(20) NULL UNIQUE,
+    kelompok VARCHAR(50) NULL,
     nilai VARCHAR(MAX) NULL
 )
 
@@ -260,9 +261,9 @@ WHERE nama = 'id_mutasi'
 IF @@ROWCOUNT = 0
 BEGIN
     INSERT INTO akuntansi.dbo.parameter
-        (nama,nilai)
+        (nama,kelompok,nilai)
     VALUES
-        ('id_mutasi', @id_mutasi)
+        ('id_mutasi', 'system',@id_mutasi)
 END
 `,
 ];
@@ -272,9 +273,9 @@ USE akuntansi
 
 DECLARE @jurnal TABLE(id INT)
 
-INSERT INTO jurnal (kode,id_mutasi, tanggal, bukti, keterangan)
+INSERT INTO jurnal (kode, tanggal, bukti, keterangan, id_mutasi)
 OUTPUT inserted.id INTO @jurnal
-VALUES (@kode,@id_mutasi, @tanggal, @bukti, @keterangan)
+VALUES (@kode, @tanggal, @bukti, @keterangan, @id_mutasi)
 
 SELECT id FROM @jurnal
 `;

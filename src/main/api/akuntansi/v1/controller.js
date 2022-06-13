@@ -1,5 +1,5 @@
 const Model = require("./model");
-const {moment} = require("../../../../common/index.js");
+const { moment } = require("../../../../common/index.js");
 
 class Controller {
     static async getReseller(req, res, next) {
@@ -60,7 +60,7 @@ class Controller {
                 {
                     _start: 0,
                     _end: 20,
-                    kelompok: '0'
+                    kelompok: "0",
                 },
                 req.query
             );
@@ -77,7 +77,14 @@ class Controller {
 
     static async postJurnalUmum(req, res, next) {
         try {
-            const options = Object.assign({}, req.body);
+            const options = Object.assign(
+                {
+                    tanggal: moment().toISOString(),
+                    bukti: '',
+                },
+                req.body
+            );
+            console.log(options)
             const result = await Model.postJurnalUmum(options);
             res.json(result.recordsets?.[0]?.[0] || {});
         } catch (error) {
@@ -124,7 +131,10 @@ class Controller {
                     _start: 0,
                     _end: 20,
                     kode_akun: "",
-                    id_pelanggan: "",
+                    // 120000010 // Bank
+                    // 150000110 // Uang Muka Pembelian
+                    // 220000110 // Uang Muka Penjualan
+                    // 210000950 // Hutang Komisi Penjualan
                     tanggal_between: [
                         //
                         moment().startOf("month").toISOString(),
