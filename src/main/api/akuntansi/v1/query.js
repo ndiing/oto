@@ -50,7 +50,6 @@ CREATE TABLE mutasi (
 
 CREATE TABLE parameter (
     nama VARCHAR(20) NULL UNIQUE,
-    kelompok VARCHAR(50) NULL,
     nilai VARCHAR(MAX) NULL
 )
 
@@ -261,9 +260,9 @@ WHERE nama = 'id_mutasi'
 IF @@ROWCOUNT = 0
 BEGIN
     INSERT INTO akuntansi.dbo.parameter
-        (nama,kelompok,nilai)
+        (nama,nilai)
     VALUES
-        ('id_mutasi', 'system',@id_mutasi)
+        ('id_mutasi',@id_mutasi)
 END
 `,
 ];
