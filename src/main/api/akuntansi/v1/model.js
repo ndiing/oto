@@ -131,7 +131,6 @@ class Model {
         const pool = await PoolManager.get();
         const request = pool.request();
         input.forEach(([column, type, value]) => request.input(column, type, value));
-        console.log(query)
         const result = await request.query(query);
         return result;
     }
