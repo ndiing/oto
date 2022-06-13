@@ -2,10 +2,11 @@
     "name": "oto",
     "version": "1.0.0",
     "description": "oto",
-    "main": "index.js",
+    "main": "src/renderer/main.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "dev": "nodemon src/main/index.js"
+        "dev": "nodemon src/main/index.js",
+        "dev-renderer": "electron ."
     },
     "repository": {
         "type": "git",
