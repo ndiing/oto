@@ -1,15 +1,19 @@
 # oto
 
--   clone
+-   Download
     ```
     git clone https://github.com/ndiing/oto.git
     ```
--   cd
+-   Buka Folder
     ```
     cd oto
     ```
--   run
+-   Jalankan
     ```
     node index.js
     ```
--   open http://localhost:5555
+-   Lihat alamat di console (alamat & port mungkin berbeda)
+    ```
+    http://192.168.1.123:55341
+    http://127.0.0.1:55341
+    ```
