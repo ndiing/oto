@@ -128,3 +128,6 @@ dist
 
 # hide
 src
+package.json
+package-lock.json
+webpack.config.json
