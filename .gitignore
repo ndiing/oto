@@ -130,4 +130,4 @@ dist
 src
 package.json
 package-lock.json
-webpack.config.json
+webpack.config.js
